@@ -1,0 +1,24 @@
+{
+  "events": [
+    {
+      "match_id": "SAMPLE-MATCH",
+      "over": 10,
+      "ball": 2,
+      "runs": 8,
+      "wickets": 0,
+      "phase": "MIDDLE",
+      "expected_runs": 3.5,
+      "expected_wickets": 0.05
+    },
+    {
+      "match_id": "SAMPLE-MATCH",
+      "over": 10,
+      "ball": 3,
+      "runs": 4,
+      "wickets": 0,
+      "phase": "MIDDLE",
+      "expected_runs": 4.0,
+      "expected_wickets": 0.1
+    }
+  ]
+}

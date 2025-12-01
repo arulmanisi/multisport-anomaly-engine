@@ -26,6 +26,10 @@ uvicorn cae.api.app:app --reload
 - Score: `POST http://localhost:8000/score`
 - UI: open `http://localhost:8000/ui/` for a simple end-to-end prototype.
 
+### Sample payloads
+- Request example: `samples/score_request.json`
+- Response example: `samples/score_response.json`
+
 Example request:
 ```bash
 curl -X POST http://localhost:8000/score \
