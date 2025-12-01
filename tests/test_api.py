@@ -20,7 +20,7 @@ def test_score_endpoint_returns_anomaly_scores() -> None:
                 "match_id": "MATCH123",
                 "over": 10,
                 "ball": 2,
-                "runs": 6,
+                "runs": 8,
                 "wickets": 0,
                 "phase": "MIDDLE",
                 "expected_runs": 3.5,
