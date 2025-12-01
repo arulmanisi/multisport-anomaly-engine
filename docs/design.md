@@ -73,6 +73,7 @@ Layers:
 1. **Data Layer (`cae.data`)**
    - Input schemas and loaders (e.g., from CSV).
    - Baseline computation utilities (e.g., expected runs, wickets by phase/venue).
+   - Synthetic data simulator for demos/tests (generates ball-by-ball events with expected baselines).
 
 2. **Model Layer (`cae.models`)**
    - Core anomaly scoring logic.
