@@ -24,7 +24,7 @@ def create_app() -> FastAPI:
         results = score_events(request.events)
         return BatchScoreResponse(results=results)
 
-    ui_dir = Path(__file__).resolve().parent.parent.parent / "ui"
+    ui_dir = Path(__file__).resolve().parent.parent.parent.parent / "ui"
     if ui_dir.exists():
         app.mount("/ui", StaticFiles(directory=str(ui_dir), html=True), name="ui")
 
