@@ -24,11 +24,16 @@ uvicorn cae.api.app:app --reload
 ```
 - Health: `GET http://localhost:8000/health`
 - Score: `POST http://localhost:8000/score`
+- Recent scores: `GET http://localhost:8000/recent`
 - UI: open `http://localhost:8000/ui/` for a simple end-to-end prototype.
 
 ### Sample payloads
 - Request example: `samples/score_request.json`
 - Response example: `samples/score_response.json`
+
+### Persistence
+- Anomaly results are stored in a local SQLite database at `data/cae.db` (created on first run).
+- `GET /recent` returns the latest scored events; the UI has a “Load recent” button wired to it.
 
 Example request:
 ```bash

@@ -25,6 +25,10 @@ This document summarizes the tech stack and component responsibilities for the C
   - Z-score anomaly detector; configurable std devs and thresholds; human-readable reasons.
 - `src/cae/models/predictor.py`
   - Bridges dataframes and scoring, validating required columns and returning results (objects or dataframe).
+- `src/cae/models/pipeline.py`
+  - End-to-end scoring helper that also persists results when a store is provided.
+- `src/cae/utils/storage.py`
+  - SQLite-backed persistence for anomaly results; fetches recent scores.
 - `tests/`
   - Unit tests for scoring logic, API responses, and simulation/prediction pipeline.
 

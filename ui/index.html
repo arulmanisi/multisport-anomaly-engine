@@ -222,6 +222,10 @@
           <h3>Results</h3>
           <p>Scored deliveries with anomaly flags and reasons.</p>
           <div class="results" id="results"></div>
+          <div class="controls">
+            <button id="recent">Load recent</button>
+            <span class="status" id="recent-status">Idle</span>
+          </div>
           <div class="footer mono" id="summary"></div>
         </section>
       </div>
@@ -255,16 +259,18 @@
 
       const payloadEl = document.getElementById("payload");
       const submitBtn = document.getElementById("submit");
+      const recentBtn = document.getElementById("recent");
       const resultsEl = document.getElementById("results");
       const statusEl = document.getElementById("status");
+      const recentStatusEl = document.getElementById("recent-status");
       const summaryEl = document.getElementById("summary");
 
       payloadEl.value = JSON.stringify(defaultPayload, null, 2);
 
-      function setStatus(text, isError = false) {
-        statusEl.textContent = text;
-        statusEl.style.color = isError ? "var(--danger)" : "var(--muted)";
-      }
+      const setStatus = (el, text, isError = false) => {
+        el.textContent = text;
+        el.style.color = isError ? "var(--danger)" : "var(--muted)";
+      };
 
       function renderResults(results) {
         resultsEl.innerHTML = "";
@@ -314,12 +320,12 @@
         try {
           body = JSON.parse(payloadEl.value);
         } catch (err) {
-          setStatus("Invalid JSON", true);
+          setStatus(statusEl, "Invalid JSON", true);
           return;
         }
 
         submitBtn.disabled = true;
-        setStatus("Scoring...");
+        setStatus(statusEl, "Scoring...");
 
         try {
           const resp = await fetch("/score", {
@@ -334,16 +340,37 @@
           }
           const data = await resp.json();
           renderResults(data.results || []);
-          setStatus("Done");
+          setStatus(statusEl, "Done");
         } catch (err) {
           console.error(err);
-          setStatus(err.message || "Request failed", true);
+          setStatus(statusEl, err.message || "Request failed", true);
         } finally {
           submitBtn.disabled = false;
         }
       }
 
+      async function loadRecent() {
+        recentBtn.disabled = true;
+        setStatus(recentStatusEl, "Loading...");
+        try {
+          const resp = await fetch("/recent?limit=20");
+          if (!resp.ok) {
+            const errText = await resp.text();
+            throw new Error(errText || `Request failed: ${resp.status}`);
+          }
+          const data = await resp.json();
+          renderResults(data.results || []);
+          setStatus(recentStatusEl, "Done");
+        } catch (err) {
+          console.error(err);
+          setStatus(recentStatusEl, err.message || "Request failed", true);
+        } finally {
+          recentBtn.disabled = false;
+        }
+      }
+
       submitBtn.addEventListener("click", scoreEvents);
+      recentBtn.addEventListener("click", loadRecent);
       renderResults([]);
     </script>
   </body>
