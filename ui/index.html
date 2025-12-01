@@ -1,0 +1,350 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Cricket Anomaly Engine</title>
+    <style>
+      :root {
+        --bg: #0b1224;
+        --panel: #101a33;
+        --accent: #4ade80;
+        --accent-2: #38bdf8;
+        --text: #e8edf7;
+        --muted: #9fb0d1;
+        --danger: #fb7185;
+        --mono: "SFMono-Regular", "JetBrains Mono", ui-monospace, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+        --sans: "Segoe UI", "Helvetica Neue", "Avenir Next", system-ui, -apple-system, sans-serif;
+        --shadow: 0 12px 32px rgba(0, 0, 0, 0.35);
+      }
+      * {
+        box-sizing: border-box;
+      }
+      body {
+        margin: 0;
+        min-height: 100vh;
+        background: radial-gradient(circle at 20% 20%, #13203c, transparent 40%),
+          radial-gradient(circle at 80% 0%, #122642, transparent 35%),
+          linear-gradient(145deg, #0a1020, #0c162c 55%, #0a1020);
+        color: var(--text);
+        font-family: var(--sans);
+        padding: 32px 20px 48px;
+      }
+      .shell {
+        max-width: 1100px;
+        margin: 0 auto;
+      }
+      header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 16px;
+        flex-wrap: wrap;
+        margin-bottom: 24px;
+      }
+      .title {
+        display: flex;
+        flex-direction: column;
+        gap: 6px;
+      }
+      h1 {
+        margin: 0;
+        font-size: 28px;
+        letter-spacing: -0.02em;
+      }
+      .subtitle {
+        margin: 0;
+        color: var(--muted);
+        font-size: 15px;
+      }
+      .pill {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        padding: 8px 12px;
+        border-radius: 14px;
+        background: linear-gradient(120deg, rgba(74, 222, 128, 0.1), rgba(56, 189, 248, 0.1));
+        color: var(--text);
+        font-size: 13px;
+        border: 1px solid rgba(74, 222, 128, 0.2);
+      }
+      .grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+        gap: 16px;
+      }
+      .card {
+        background: var(--panel);
+        border: 1px solid rgba(255, 255, 255, 0.04);
+        border-radius: 16px;
+        padding: 18px;
+        box-shadow: var(--shadow);
+      }
+      .card h3 {
+        margin: 0 0 10px 0;
+        font-size: 18px;
+      }
+      .card p {
+        margin: 0 0 12px 0;
+        color: var(--muted);
+        font-size: 14px;
+      }
+      textarea {
+        width: 100%;
+        min-height: 220px;
+        background: #0a1327;
+        color: var(--text);
+        border: 1px solid rgba(255, 255, 255, 0.07);
+        border-radius: 12px;
+        padding: 12px;
+        font-family: var(--mono);
+        font-size: 13px;
+        resize: vertical;
+      }
+      button {
+        appearance: none;
+        border: none;
+        outline: none;
+        cursor: pointer;
+        padding: 12px 16px;
+        border-radius: 12px;
+        background: linear-gradient(120deg, var(--accent), var(--accent-2));
+        color: #0b1020;
+        font-weight: 700;
+        letter-spacing: 0.01em;
+        box-shadow: 0 10px 24px rgba(56, 189, 248, 0.35);
+        transition: transform 120ms ease, box-shadow 120ms ease;
+      }
+      button:hover {
+        transform: translateY(-1px);
+        box-shadow: 0 12px 28px rgba(56, 189, 248, 0.45);
+      }
+      button:disabled {
+        opacity: 0.6;
+        cursor: not-allowed;
+        transform: none;
+        box-shadow: none;
+      }
+      .controls {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        margin-top: 12px;
+      }
+      .status {
+        font-size: 13px;
+        color: var(--muted);
+      }
+      .results {
+        display: grid;
+        gap: 10px;
+        margin-top: 12px;
+      }
+      .result-row {
+        display: grid;
+        grid-template-columns: 1fr 1fr 2fr 1fr 1fr;
+        gap: 8px;
+        align-items: center;
+        padding: 10px 12px;
+        background: rgba(255, 255, 255, 0.02);
+        border: 1px solid rgba(255, 255, 255, 0.06);
+        border-radius: 10px;
+        font-size: 13px;
+      }
+      .result-row span {
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+      }
+      .badge {
+        padding: 4px 10px;
+        border-radius: 10px;
+        font-weight: 700;
+        font-size: 12px;
+        text-align: center;
+      }
+      .badge.anomaly {
+        background: rgba(251, 113, 133, 0.18);
+        color: var(--danger);
+        border: 1px solid rgba(251, 113, 133, 0.4);
+      }
+      .badge.normal {
+        background: rgba(74, 222, 128, 0.15);
+        color: #22c55e;
+        border: 1px solid rgba(34, 197, 94, 0.4);
+      }
+      .mono {
+        font-family: var(--mono);
+        color: var(--muted);
+      }
+      .footer {
+        margin-top: 18px;
+        font-size: 13px;
+        color: var(--muted);
+      }
+      @media (max-width: 720px) {
+        .result-row {
+          grid-template-columns: repeat(2, 1fr);
+          row-gap: 6px;
+        }
+        .result-row .reason {
+          grid-column: span 2;
+          white-space: normal;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <div class="shell">
+      <header>
+        <div class="title">
+          <h1>Cricket Anomaly Engine</h1>
+          <p class="subtitle">Score deliveries and visualize anomalies in real time.</p>
+        </div>
+        <div class="pill">
+          <span>API</span>
+          <strong>/score</strong>
+        </div>
+      </header>
+
+      <div class="grid">
+        <section class="card">
+          <h3>Input events</h3>
+          <p>Paste or edit the JSON payload sent to the `/score` endpoint.</p>
+          <textarea id="payload"></textarea>
+          <div class="controls">
+            <button id="submit">Score events</button>
+            <span class="status" id="status">Idle</span>
+          </div>
+        </section>
+
+        <section class="card">
+          <h3>Results</h3>
+          <p>Scored deliveries with anomaly flags and reasons.</p>
+          <div class="results" id="results"></div>
+          <div class="footer mono" id="summary"></div>
+        </section>
+      </div>
+    </div>
+
+    <script>
+      const defaultPayload = {
+        events: [
+          {
+            match_id: "DEMO-MATCH",
+            over: 10,
+            ball: 2,
+            runs: 8,
+            wickets: 0,
+            phase: "MIDDLE",
+            expected_runs: 3.5,
+            expected_wickets: 0.05,
+          },
+          {
+            match_id: "DEMO-MATCH",
+            over: 10,
+            ball: 3,
+            runs: 4,
+            wickets: 0,
+            phase: "MIDDLE",
+            expected_runs: 4.0,
+            expected_wickets: 0.1,
+          },
+        ],
+      };
+
+      const payloadEl = document.getElementById("payload");
+      const submitBtn = document.getElementById("submit");
+      const resultsEl = document.getElementById("results");
+      const statusEl = document.getElementById("status");
+      const summaryEl = document.getElementById("summary");
+
+      payloadEl.value = JSON.stringify(defaultPayload, null, 2);
+
+      function setStatus(text, isError = false) {
+        statusEl.textContent = text;
+        statusEl.style.color = isError ? "var(--danger)" : "var(--muted)";
+      }
+
+      function renderResults(results) {
+        resultsEl.innerHTML = "";
+        if (!results || results.length === 0) {
+          resultsEl.innerHTML = "<div class='mono'>No results yet.</div>";
+          summaryEl.textContent = "";
+          return;
+        }
+        const anomalies = results.filter((r) => r.is_anomaly).length;
+        summaryEl.textContent = `${results.length} events • ${anomalies} flagged`;
+
+        results.forEach((r) => {
+          const row = document.createElement("div");
+          row.className = "result-row";
+
+          const badge = document.createElement("span");
+          badge.className = `badge ${r.is_anomaly ? "anomaly" : "normal"}`;
+          badge.textContent = r.is_anomaly ? "Anomaly" : "Normal";
+
+          const overBall = document.createElement("span");
+          overBall.textContent = `Over ${r.over}.${r.ball}`;
+
+          const score = document.createElement("span");
+          score.className = "mono";
+          score.textContent = r.anomaly_score.toFixed(2);
+
+          const reason = document.createElement("span");
+          reason.className = "reason";
+          reason.textContent = r.reason;
+
+          const match = document.createElement("span");
+          match.className = "mono";
+          match.textContent = r.match_id;
+
+          row.appendChild(badge);
+          row.appendChild(overBall);
+          row.appendChild(reason);
+          row.appendChild(score);
+          row.appendChild(match);
+
+          resultsEl.appendChild(row);
+        });
+      }
+
+      async function scoreEvents() {
+        let body;
+        try {
+          body = JSON.parse(payloadEl.value);
+        } catch (err) {
+          setStatus("Invalid JSON", true);
+          return;
+        }
+
+        submitBtn.disabled = true;
+        setStatus("Scoring...");
+
+        try {
+          const resp = await fetch("/score", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(body),
+          });
+
+          if (!resp.ok) {
+            const errText = await resp.text();
+            throw new Error(errText || `Request failed: ${resp.status}`);
+          }
+          const data = await resp.json();
+          renderResults(data.results || []);
+          setStatus("Done");
+        } catch (err) {
+          console.error(err);
+          setStatus(err.message || "Request failed", true);
+        } finally {
+          submitBtn.disabled = false;
+        }
+      }
+
+      submitBtn.addEventListener("click", scoreEvents);
+      renderResults([]);
+    </script>
+  </body>
+</html>

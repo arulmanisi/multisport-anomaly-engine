@@ -24,6 +24,7 @@ uvicorn cae.api.app:app --reload
 ```
 - Health: `GET http://localhost:8000/health`
 - Score: `POST http://localhost:8000/score`
+- UI: open `http://localhost:8000/ui/` for a simple end-to-end prototype.
 
 Example request:
 ```bash

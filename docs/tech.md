@@ -28,6 +28,13 @@ This document summarizes the tech stack and component responsibilities for the C
 - `tests/`
   - Unit tests for scoring logic, API responses, and simulation/prediction pipeline.
 
+## Why a z-score detector?
+- Interpretability: z-scores show how many standard deviations an observation is from its expected value, which is easy to reason about and explain.
+- Simplicity: minimal parameters (`run_std`, `wicket_std`, `threshold`) and no training loop; works immediately with provided baselines.
+- Composability: runs/wickets are independent components; combining their z-scores via Euclidean norm yields a single score while preserving signal from each dimension.
+- Baseline-friendly: pairs naturally with simple expected values (per-phase averages) and can be tightened later with context-specific std devs without changing the interface.
+- Testability: deterministic math with clear thresholds makes for straightforward unit and API contract tests.
+
 ## Data Flow
 1) Ingestion: API receives `BatchScoreRequest` with event payloads (or dataframes via predictor helper).
 2) Validation: Pydantic ensures schema correctness and non-empty fields.
