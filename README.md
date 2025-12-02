@@ -69,6 +69,14 @@ results = score_events(requests)
 ```
 Sample CSV: `data/plaix_sample_events.csv`
 
+## PLAIX Baselines Pipeline (Day 5)
+1) Load CSV: `df = load_events_csv("data/plaix_sample_events.csv")`
+2) Compute baselines: `baselines = compute_phase_baselines(df)`
+3) Attach: `df_expected = attach_baselines(df, baselines)`
+4) Build requests: `requests = prepare_requests_from_df(df_expected)`
+5) Score: `results = score_events(requests)`
+6) Handle missing expected values by running baseline attachment first; scorer will raise if they are absent.
+
 Example request:
 ```bash
 curl -X POST http://localhost:8000/score \

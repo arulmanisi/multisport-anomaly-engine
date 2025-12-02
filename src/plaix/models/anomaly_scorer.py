@@ -19,6 +19,8 @@ class AnomalyRequest(BaseModel):
     ball: int = Field(..., ge=1)
     runs: float
     wickets: float
+    expected_runs: float | None = None
+    expected_wickets: float | None = None
 
 
 class AnomalyResponse(BaseModel):
@@ -34,6 +36,9 @@ class AnomalyResponse(BaseModel):
 
 def score_event(event: AnomalyRequest) -> AnomalyResponse:
     """Rule-based scorer using configurable thresholds."""
+    if event.expected_runs is None or event.expected_wickets is None:
+        raise ValueError("Run baseline attachment first: expected_runs/expected_wickets missing.")
+
     run_thresh = getattr(settings, "anomaly_run_threshold", 6)
     wicket_thresh = getattr(settings, "anomaly_wicket_threshold", 1)
 
@@ -66,14 +71,13 @@ def score_events(events: List[AnomalyRequest]) -> List[AnomalyResponse]:
 
 def prepare_requests_from_df(df: pd.DataFrame) -> List[AnomalyRequest]:
     """Convert a DataFrame to AnomalyRequest list with validation."""
-    required = {"match_id", "over", "ball", "runs", "wickets"}
+    required = {"match_id", "over", "ball", "runs", "wickets", "expected_runs", "expected_wickets"}
     missing = required - set(df.columns)
     if missing:
         raise ValueError(f"Missing required columns for requests: {', '.join(sorted(missing))}")
 
-    if {"expected_runs", "expected_wickets"} & set(df.columns):
-        if df[["expected_runs", "expected_wickets"]].isna().any().any():
-            raise ValueError("Expected values contain NaNs; compute baselines first.")
+    if df[["expected_runs", "expected_wickets"]].isna().any().any():
+        raise ValueError("Expected values contain NaNs; compute baselines first.")
 
     events: List[AnomalyRequest] = [
         AnomalyRequest(
@@ -82,6 +86,8 @@ def prepare_requests_from_df(df: pd.DataFrame) -> List[AnomalyRequest]:
             ball=int(row["ball"]),
             runs=float(row["runs"]),
             wickets=float(row["wickets"]),
+            expected_runs=float(row["expected_runs"]),
+            expected_wickets=float(row["expected_wickets"]),
         )
         for _, row in df.iterrows()
     ]

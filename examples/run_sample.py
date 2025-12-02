@@ -22,6 +22,8 @@ def main() -> None:
             ball=int(row["ball"]),
             runs=float(row["runs"]),
             wickets=float(row["wickets"]),
+            expected_runs=float(row["expected_runs"]),
+            expected_wickets=float(row["expected_wickets"]),
         )
         for _, row in df_with_expected.iterrows()
     ]
