@@ -9,7 +9,7 @@ import pandas as pd
 
 from plaix.data.baselines import attach_baselines, compute_phase_baselines
 from plaix.data.loader import load_events_csv
-from plaix.models.anomaly_scorer import AnomalyRequest, prepare_requests_from_df
+from plaix.sports.cricket.scorer import AnomalyRequest, prepare_requests_from_df
 
 
 def prepare_events_for_scoring(csv_path: str | Path) -> List[AnomalyRequest]:

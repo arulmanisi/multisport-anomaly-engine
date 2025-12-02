@@ -1,6 +1,6 @@
 # Cricket Anomaly Engine
 
-Open-source engine to detect unusual patterns in cricket matches. It consumes structured ball-by-ball/phase data, scores deviations from baselines, and exposes a FastAPI endpoint for scoring.
+Open-source engine to detect unusual patterns in sports matches. PLAIX is a multi-sport anomaly and intelligence platform; it currently ships a cricket scorer and a football placeholder, with a structure to add more sports easily.
 
 ## PLAIX MVP (Day 1)
 - Backend MVP for cricket anomaly detection (placeholder rule-based scoring).
@@ -31,7 +31,8 @@ uvicorn cae.api.app:app --reload
 uvicorn plaix.api.main:app --reload
 ```
 - Health: `GET http://localhost:8000/health`
-- Score: `POST http://localhost:8000/score`
+- Cricket-only (legacy): `POST http://localhost:8000/score`
+- Multi-sport: `POST http://localhost:8000/plaix/score`
 - Recent scores: `GET http://localhost:8000/recent`
 - UI: open `http://localhost:8000/ui/` for a simple end-to-end prototype.
 
@@ -76,6 +77,18 @@ Sample CSV: `data/plaix_sample_events.csv`
 4) Build requests: `requests = prepare_requests_from_df(df_expected)`
 5) Score: `results = score_events(requests)`
 6) Handle missing expected values by running baseline attachment first; scorer will raise if they are absent.
+
+## Multi-sport architecture
+- `plaix.core`: sport-agnostic request/response models and a registry to dispatch by `sport`.
+- `plaix.sports.cricket`: cricket event models and scoring logic (rule-based placeholder).
+- `plaix.sports.football`: placeholder scorer returning non-anomalous results.
+- API: `POST /plaix/score` expects `{"sport": "<sport>", "events": [...]}` and routes to the correct scorer. Unknown sports return HTTP 400.
+
+### Add a new sport
+1) Create `plaix/sports/<sport>/` with scorer that accepts `List[dict]` and returns `List[dict]`.
+2) Define sport-specific schemas and baseline logic as needed.
+3) Register the handler in `plaix.api.main` (via the core registry).
+4) Add tests covering dispatch and sport-specific scoring.
 
 Example request:
 ```bash

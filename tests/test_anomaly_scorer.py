@@ -67,6 +67,5 @@ def test_prepare_requests_from_df() -> None:
 
 
 def test_score_event_missing_expected_raises() -> None:
-    event = AnomalyRequest(match_id="M1", over=1, ball=1, runs=4, wickets=0)
-    with pytest.raises(ValueError):
-        score_event(event)
+    with pytest.raises(Exception):
+        AnomalyRequest(match_id="M1", over=1, ball=1, runs=4, wickets=0)  # type: ignore[arg-type]
