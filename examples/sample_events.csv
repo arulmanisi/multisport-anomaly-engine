@@ -1,0 +1,6 @@
+match_id,over,ball,runs,wickets,phase
+DEMO,1,1,4,0,POWERPLAY
+DEMO,1,2,6,0,POWERPLAY
+DEMO,10,1,2,0,MIDDLE
+DEMO,10,2,8,0,MIDDLE
+DEMO,19,1,10,0,DEATH

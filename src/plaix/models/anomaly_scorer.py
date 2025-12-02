@@ -6,6 +6,8 @@ from typing import List
 
 from pydantic import BaseModel, Field
 
+from plaix.config import settings
+
 
 class AnomalyRequest(BaseModel):
     """Minimal event input for anomaly scoring."""
@@ -29,10 +31,22 @@ class AnomalyResponse(BaseModel):
 
 
 def score_event(event: AnomalyRequest) -> AnomalyResponse:
-    """Trivial rule-based scorer for MVP placeholder."""
-    is_anomaly = event.runs >= 6 or event.wickets >= 1
-    score = 1.0 if is_anomaly else 0.0
-    reason = "boundary or wicket" if is_anomaly else "within expected range"
+    """Rule-based scorer using configurable thresholds."""
+    run_thresh = getattr(settings, "anomaly_run_threshold", 6)
+    wicket_thresh = getattr(settings, "anomaly_wicket_threshold", 1)
+
+    is_run_spike = event.runs >= run_thresh
+    is_wicket_event = event.wickets >= wicket_thresh
+
+    is_anomaly = is_run_spike or is_wicket_event
+    score = float(event.runs) + (5.0 if is_wicket_event else 0.0)
+    reason_parts = []
+    if is_run_spike:
+        reason_parts.append(f"runs >= {run_thresh}")
+    if is_wicket_event:
+        reason_parts.append(f"wickets >= {wicket_thresh}")
+    reason = "; ".join(reason_parts) if reason_parts else "within expected range"
+
     return AnomalyResponse(
         match_id=event.match_id,
         over=event.over,

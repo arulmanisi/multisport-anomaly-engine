@@ -2,6 +2,11 @@
 
 Open-source engine to detect unusual patterns in cricket matches. It consumes structured ball-by-ball/phase data, scores deviations from baselines, and exposes a FastAPI endpoint for scoring.
 
+## PLAIX MVP (Day 1)
+- Backend MVP for cricket anomaly detection (placeholder rule-based scoring).
+- FastAPI service with `/health` and `/score` using `plaix` models.
+- Pydantic models for inputs/outputs; pytest tests for health and scoring.
+
 ## Features
 - Pydantic schemas for structured cricket events and anomaly outputs.
 - Simple, interpretable z-score anomaly detector (runs/wickets vs expected).
@@ -21,6 +26,9 @@ pip install -r requirements.txt
 ### Run the API
 ```bash
 uvicorn cae.api.app:app --reload
+
+# PLAIX MVP app
+uvicorn plaix.api.main:app --reload
 ```
 - Health: `GET http://localhost:8000/health`
 - Score: `POST http://localhost:8000/score`
@@ -34,6 +42,12 @@ uvicorn cae.api.app:app --reload
 ### Persistence
 - Anomaly results are stored in a local SQLite database at `data/cae.db` (created on first run).
 - `GET /recent` returns the latest scored events; the UI has a “Load recent” button wired to it.
+
+## PLAIX Day 2 workflow
+- Load events CSV: `plaix.data.loader.load_events_csv`
+- Compute baselines and attach expected values: `plaix.data.baselines.compute_phase_baselines` and `attach_baselines`
+- Score events via API or directly with `plaix.models.anomaly_scorer.score_events`
+- Example script: `python examples/run_sample.py`
 
 Example request:
 ```bash
