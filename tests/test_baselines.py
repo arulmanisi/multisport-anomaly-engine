@@ -2,6 +2,8 @@ import pandas as pd
 import pytest
 
 from plaix.data.baselines import attach_baselines, compute_phase_baselines
+from plaix.pipeline.events_pipeline import prepare_events_for_scoring
+from plaix.models.anomaly_scorer import score_events
 
 
 def sample_df():
@@ -44,3 +46,14 @@ def test_attach_baselines_missing_phase() -> None:
 
     with pytest.raises(ValueError):
         attach_baselines(df, baselines)
+
+
+def test_pipeline_end_to_end(tmp_path) -> None:
+    csv_path = tmp_path / "events.csv"
+    sample_df().to_csv(csv_path, index=False)
+
+    requests = prepare_events_for_scoring(csv_path)
+    results = score_events(requests)
+
+    assert len(results) == len(sample_df())
+    assert any(r.is_anomaly for r in results)

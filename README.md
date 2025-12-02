@@ -54,6 +54,7 @@ uvicorn plaix.api.main:app --reload
 from plaix.data.loader import load_events_csv
 from plaix.data.baselines import compute_phase_baselines, attach_baselines
 from plaix.models.anomaly_scorer import prepare_requests_from_df, score_events
+from plaix.pipeline.events_pipeline import prepare_events_for_scoring
 
 df = load_events_csv("path/to/events.csv")
 baselines = compute_phase_baselines(df)
@@ -61,7 +62,12 @@ df_expected = attach_baselines(df, baselines)
 requests = prepare_requests_from_df(df_expected)
 results = score_events(requests)
 anomalies = [r for r in results if r.is_anomaly]
+
+# Or use the pipeline helper:
+requests = prepare_events_for_scoring("data/plaix_sample_events.csv")
+results = score_events(requests)
 ```
+Sample CSV: `data/plaix_sample_events.csv`
 
 Example request:
 ```bash
