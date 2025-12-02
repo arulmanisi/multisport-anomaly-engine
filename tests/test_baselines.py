@@ -24,6 +24,7 @@ def test_compute_phase_baselines() -> None:
 
     assert set(baselines.columns) == {"phase", "expected_runs", "expected_wickets"}
     assert len(baselines) == 3
+    assert baselines.loc[baselines["phase"] == "POWERPLAY", "expected_runs"].iloc[0] == 4
 
 
 def test_attach_baselines_success() -> None:

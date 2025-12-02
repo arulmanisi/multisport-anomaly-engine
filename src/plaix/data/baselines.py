@@ -12,6 +12,8 @@ def compute_phase_baselines(df: pd.DataFrame) -> pd.DataFrame:
     missing = REQUIRED_COLUMNS - set(df.columns)
     if missing:
         raise ValueError(f"Missing required columns: {', '.join(sorted(missing))}")
+    if df.empty:
+        raise ValueError("Cannot compute baselines on empty DataFrame")
     grouped = (
         df.groupby("phase")
         .agg(expected_runs=("runs", "mean"), expected_wickets=("wickets", "mean"))

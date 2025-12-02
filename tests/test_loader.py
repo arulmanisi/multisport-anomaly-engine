@@ -8,7 +8,7 @@ def test_load_events_csv_valid(tmp_path) -> None:
     csv_path = tmp_path / "events.csv"
     df = pd.DataFrame(
         {
-            "match_id": ["M1"],
+            " match_id ": ["M1"],
             "over": [1],
             "ball": [1],
             "runs": [4],
@@ -22,6 +22,8 @@ def test_load_events_csv_valid(tmp_path) -> None:
 
     assert not loaded.empty
     assert set(loaded.columns) == {"match_id", "over", "ball", "runs", "wickets", "phase"}
+    assert loaded["phase"].iloc[0] == "POWERPLAY"
+    assert loaded["over"].dtype == int
 
 
 def test_load_events_csv_missing_columns(tmp_path) -> None:

@@ -6,6 +6,8 @@ from typing import List
 
 from pydantic import BaseModel, Field
 
+import pandas as pd
+
 from plaix.config import settings
 
 
@@ -60,3 +62,27 @@ def score_event(event: AnomalyRequest) -> AnomalyResponse:
 def score_events(events: List[AnomalyRequest]) -> List[AnomalyResponse]:
     """Score a list of events."""
     return [score_event(event) for event in events]
+
+
+def prepare_requests_from_df(df: pd.DataFrame) -> List[AnomalyRequest]:
+    """Convert a DataFrame to AnomalyRequest list with validation."""
+    required = {"match_id", "over", "ball", "runs", "wickets"}
+    missing = required - set(df.columns)
+    if missing:
+        raise ValueError(f"Missing required columns for requests: {', '.join(sorted(missing))}")
+
+    if {"expected_runs", "expected_wickets"} & set(df.columns):
+        if df[["expected_runs", "expected_wickets"]].isna().any().any():
+            raise ValueError("Expected values contain NaNs; compute baselines first.")
+
+    events: List[AnomalyRequest] = [
+        AnomalyRequest(
+            match_id=str(row["match_id"]),
+            over=int(row["over"]),
+            ball=int(row["ball"]),
+            runs=float(row["runs"]),
+            wickets=float(row["wickets"]),
+        )
+        for _, row in df.iterrows()
+    ]
+    return events

@@ -49,6 +49,20 @@ uvicorn plaix.api.main:app --reload
 - Score events via API or directly with `plaix.models.anomaly_scorer.score_events`
 - Example script: `python examples/run_sample.py`
 
+## Data Flow (CSV → Baselines → Scoring)
+```python
+from plaix.data.loader import load_events_csv
+from plaix.data.baselines import compute_phase_baselines, attach_baselines
+from plaix.models.anomaly_scorer import prepare_requests_from_df, score_events
+
+df = load_events_csv("path/to/events.csv")
+baselines = compute_phase_baselines(df)
+df_expected = attach_baselines(df, baselines)
+requests = prepare_requests_from_df(df_expected)
+results = score_events(requests)
+anomalies = [r for r in results if r.is_anomaly]
+```
+
 Example request:
 ```bash
 curl -X POST http://localhost:8000/score \
