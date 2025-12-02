@@ -1,4 +1,4 @@
-# Cricket Anomaly Engine
+# Multisport AI Engine (PLAIX)
 
 Open-source engine to detect unusual patterns in sports matches. PLAIX is a multi-sport anomaly and intelligence platform; it currently ships a cricket scorer and a football placeholder, with a structure to add more sports easily.
 
