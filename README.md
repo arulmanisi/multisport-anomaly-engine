@@ -116,6 +116,11 @@ Sample CSV: `data/plaix_sample_events.csv`
 - Methods: `fit`, `predict`, `predict_proba`, `save_model`, `load_model` (all TODOs).
 - Focused on anomaly labels (UPS Score and related anomaly tasks); no backend tied yet.
 
+## Training engine (Day 10 design)
+- `plaix.core.training.TrainingEngine`: wires DataPipeline and AnomalyModel for training/evaluation.
+- Methods (design only): `run_training` (pipeline + fit), `run_evaluation` (predict + anomaly metrics like precision/recall, PR-AUC, recall@FPR), `log_metrics`.
+- Shapes: expects X/y for anomaly labels (UPS Score, etc.), extensible to multi-label anomaly targets.
+
 Example request:
 ```bash
 curl -X POST http://localhost:8000/score \
