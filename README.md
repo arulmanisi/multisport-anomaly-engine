@@ -128,6 +128,13 @@ Sample CSV: `data/plaix_sample_events.csv`
   - `predict-batch --input <path> --model <path>`
 - Structure only: parses args, mocks model load, placeholder feature extraction, outputs UPS Score/is_anomalous placeholders.
 
+## REST inference (Day 10 - REST design)
+- `plaix.api.inference`: design-only FastAPI-style service.
+- Endpoints (commented placeholders):
+  - `POST /predict/single` → UPS Score + is_anomalous
+  - `POST /predict/batch` → list of scores/flags
+- `InferenceService` wires feature extractor and model loading (placeholders) with preprocess/run_inference/format_output hooks.
+
 Example request:
 ```bash
 curl -X POST http://localhost:8000/score \
