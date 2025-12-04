@@ -135,6 +135,11 @@ Sample CSV: `data/plaix_sample_events.csv`
   - `POST /predict/batch` → list of scores/flags
 - `InferenceService` wires feature extractor and model loading (placeholders) with preprocess/run_inference/format_output hooks.
 
+## Core anomaly logic (UPS Score design)
+- `plaix.core.ups_scorer.UPSScorer`: computes UPS (Unexpected Performance Spike) from historical baselines and current performance.
+- Methods: `compute_player_baseline`, `compute_match_performance`, `compute_ups_score`, `is_anomalous`, `score_player`.
+- Uses z-score style deviation across runs/strike rate/wickets/economy (placeholders/assumptions); configurable per sport via metric_config.
+
 Example request:
 ```bash
 curl -X POST http://localhost:8000/score \
