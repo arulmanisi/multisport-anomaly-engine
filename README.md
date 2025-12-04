@@ -99,6 +99,13 @@ Sample CSV: `data/plaix_sample_events.csv`
   - Venue/weather features
 - Placeholder methods (no implementation yet): `get_team_strength`, `get_player_form`, `compute_recent_performance_index`, `compute_venue_advantage`.
 
+## Label creation (Day 7 design)
+- Core: `plaix.core.labels.LabelRegistry`, `LabelRequest`, `LabelResponse`.
+- Cricket labels via `plaix.sports.cricket.labels.LabelCreator`:
+  - Baseline labels: `winner`, `run_margin` (future), `first_innings_score` (future)
+  - Anomaly labels: `ups_score`, `bowling_spell_anomaly`, `batting_collapse_indicator`, `momentum_shift_score`, `contextual_upset_indicator`, `outlier_event_tag`
+- Registry supports `register_label` and `get_label_output`; placeholder methods only, ready for future implementation.
+
 Example request:
 ```bash
 curl -X POST http://localhost:8000/score \
