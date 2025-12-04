@@ -111,6 +111,11 @@ Sample CSV: `data/plaix_sample_events.csv`
 - Dependencies injected: data_loader, cleaner, feature_extractor (sport-specific), label_creator (sport-specific).
 - Methods are structure/docstring/TODO only; anomaly-focused labels (e.g., UPS Score) called out for future logic.
 
+## Model layer (Day 9 design)
+- `plaix.core.model.AnomalyModel`: framework-agnostic wrapper with hooks for model_type/model_config and optional sport.
+- Methods: `fit`, `predict`, `predict_proba`, `save_model`, `load_model` (all TODOs).
+- Focused on anomaly labels (UPS Score and related anomaly tasks); no backend tied yet.
+
 Example request:
 ```bash
 curl -X POST http://localhost:8000/score \
