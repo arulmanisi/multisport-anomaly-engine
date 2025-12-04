@@ -90,6 +90,15 @@ Sample CSV: `data/plaix_sample_events.csv`
 3) Register the handler in `plaix.api.main` (via the core registry).
 4) Add tests covering dispatch and sport-specific scoring.
 
+## Feature extraction (cricket design)
+- Core abstractions: `plaix.core.features.FeatureExtractor`, `FeatureExtractionInput`, `FeatureExtractionOutput`.
+- Cricket structure: `plaix.sports.cricket.features.CricketFeatureExtractor` with buckets:
+  - Match context features
+  - Team-level features
+  - Player-level features
+  - Venue/weather features
+- Placeholder methods (no implementation yet): `get_team_strength`, `get_player_form`, `compute_recent_performance_index`, `compute_venue_advantage`.
+
 Example request:
 ```bash
 curl -X POST http://localhost:8000/score \
