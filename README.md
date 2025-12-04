@@ -106,6 +106,11 @@ Sample CSV: `data/plaix_sample_events.csv`
   - Anomaly labels: `ups_score`, `bowling_spell_anomaly`, `batting_collapse_indicator`, `momentum_shift_score`, `contextual_upset_indicator`, `outlier_event_tag`
 - Registry supports `register_label` and `get_label_output`; placeholder methods only, ready for future implementation.
 
+## Data pipeline (Day 8 design)
+- `plaix.core.pipeline.DataPipeline`: orchestrates loading, cleaning, feature extraction, label generation, dataset assembly, and train/validation split.
+- Dependencies injected: data_loader, cleaner, feature_extractor (sport-specific), label_creator (sport-specific).
+- Methods are structure/docstring/TODO only; anomaly-focused labels (e.g., UPS Score) called out for future logic.
+
 Example request:
 ```bash
 curl -X POST http://localhost:8000/score \
