@@ -121,6 +121,13 @@ Sample CSV: `data/plaix_sample_events.csv`
 - Methods (design only): `run_training` (pipeline + fit), `run_evaluation` (predict + anomaly metrics like precision/recall, PR-AUC, recall@FPR), `log_metrics`.
 - Shapes: expects X/y for anomaly labels (UPS Score, etc.), extensible to multi-label anomaly targets.
 
+## CLI (Day 10 - CLI design)
+- `src/plaix/cli.py`: tiny inference CLI skeleton.
+- Commands:
+  - `predict-single --input <json_or_path> --model <path>`
+  - `predict-batch --input <path> --model <path>`
+- Structure only: parses args, mocks model load, placeholder feature extraction, outputs UPS Score/is_anomalous placeholders.
+
 Example request:
 ```bash
 curl -X POST http://localhost:8000/score \
