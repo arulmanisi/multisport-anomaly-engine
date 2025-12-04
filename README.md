@@ -1,4 +1,5 @@
 # Multisport AI Engine (PLAIX)
+[![License](https://img.shields.io/badge/License-Apache_2.0-blue.svg)](./LICENSE)
 
 Open-source engine to detect unusual patterns in sports matches. PLAIX is a multi-sport anomaly and intelligence platform; it currently ships a cricket scorer and a football placeholder, with a structure to add more sports easily.
 
@@ -139,6 +140,12 @@ Sample CSV: `data/plaix_sample_events.csv`
 - `plaix.core.ups_scorer.UPSScorer`: computes UPS (Unexpected Performance Spike) from historical baselines and current performance.
 - Methods: `compute_player_baseline`, `compute_match_performance`, `compute_ups_score`, `is_anomalous`, `score_player`.
 - Uses z-score style deviation across runs/strike rate/wickets/economy (placeholders/assumptions); configurable per sport via metric_config.
+
+## Disclaimer
+
+This project is fully open-source and uses only publicly available, synthetic,
+or self-generated data. No enterprise, confidential, or proprietary data from
+any employer (past or present) has been used in developing this project.
 
 Example request:
 ```bash
