@@ -4,90 +4,60 @@ from __future__ import annotations
 
 from typing import Any, Dict, Optional
 
+import joblib
+from sklearn.linear_model import LogisticRegression
+
 
 class AnomalyModel:
-    """Framework-agnostic model wrapper for anomaly detection.
-
-    Designed to handle UPS Score (Unexpected Performance Spike) and other anomaly labels,
-    supporting binary anomaly targets and score-based outputs. This class is sport- and
-    task-aware via config, but does not commit to a specific ML library.
-    """
+    """Model wrapper for anomaly detection, with optional sklearn backends."""
 
     def __init__(self, model_type: str, model_config: Optional[Dict[str, Any]] = None, sport: Optional[str] = None):
         """
         Initialize the model wrapper.
 
         Args:
-            model_type: identifier for backend (e.g., "random_forest", "gradient_boosting", "isolation_forest").
+            model_type: identifier for backend (e.g., "logistic_regression").
             model_config: hyperparameters for the chosen backend.
             sport: optional sport identifier for multi-sport setups.
         """
         self.model_type = model_type
         self.model_config = model_config or {}
         self.sport = sport
-        # TODO: instantiate the actual model backend based on model_type and model_config.
+        self.model = self._build_model()
+
+    def _build_model(self):
+        """Instantiate backend model based on model_type."""
+        if self.model_type == "logistic_regression":
+            return LogisticRegression(**self.model_config)
+        # TODO: extend with other backends (e.g., tree ensembles, isolation forests).
+        raise ValueError(f"Unsupported model_type: {self.model_type}")
 
     def fit(self, X: Any, y: Any) -> None:
-        """
-        Train the model on features and labels.
-
-        Args:
-            X: feature matrix/structure (e.g., dataframe, array).
-            y: labels, expected to include anomaly targets (binary or score-based, e.g., UPS Score).
-        """
-        # TODO: delegate to backend model's fit.
-        raise NotImplementedError
+        """Train the model on features and labels."""
+        self.model.fit(X, y)
 
     def predict(self, X: Any) -> Any:
-        """
-        Predict anomaly labels (binary or score-based).
-
-        Args:
-            X: feature matrix/structure.
-        Returns:
-            Predictions aligned to the anomaly task (e.g., UPS binary labels or scores).
-        """
-        # TODO: delegate to backend model's predict.
-        raise NotImplementedError
+        """Predict anomaly labels (binary or score-based)."""
+        return self.model.predict(X)
 
     def predict_proba(self, X: Any) -> Any:
         """
         Predict class probabilities or anomaly scores where applicable.
 
-        Args:
-            X: feature matrix/structure.
-        Returns:
-            Probabilities or scores (for detectors that support it).
         Notes:
-            - Some anomaly detectors output scores rather than probabilities.
-            - Implement conditional support depending on backend capabilities.
+            - For logistic regression, returns probability for each class.
         """
-        # TODO: delegate to backend model's predict_proba or equivalent anomaly scoring.
-        raise NotImplementedError
+        if hasattr(self.model, "predict_proba"):
+            return self.model.predict_proba(X)
+        raise AttributeError("predict_proba not supported for this model backend.")
 
     def save_model(self, path: str) -> None:
-        """
-        Persist the trained model to disk.
-
-        Args:
-            path: destination path for the serialized model artifact.
-        Notes:
-            - Keep serialization backend flexible (pickle/joblib/onnx) depending on model_type.
-        """
-        # TODO: implement model serialization strategy.
-        raise NotImplementedError
+        """Persist the trained model to disk."""
+        joblib.dump(self.model, path)
 
     def load_model(self, path: str) -> None:
-        """
-        Load a model from disk.
-
-        Args:
-            path: source path of the serialized model artifact.
-        Notes:
-            - Should restore the model in a ready-to-predict state.
-        """
-        # TODO: implement model deserialization strategy.
-        raise NotImplementedError
+        """Load a model from disk."""
+        self.model = joblib.load(path)
 
     def __repr__(self) -> str:
         return f"AnomalyModel(type={self.model_type}, sport={self.sport}, config={self.model_config})"
