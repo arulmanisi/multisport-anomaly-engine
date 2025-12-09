@@ -31,7 +31,8 @@ class StubPipeline:
 
 class StubModel(AnomalyModel):
     def __init__(self):
-        super().__init__(model_type="stub", model_config={}, sport="cricket")
+        super().__init__(model_type="logistic_regression", model_config={}, sport="cricket")
+        self.model = DummyBackend()
         self.fit_called = False
         self.predict_called = False
 
@@ -50,6 +51,17 @@ class StubModel(AnomalyModel):
 
     def load_model(self, path: str) -> None:
         return None
+
+
+class DummyBackend:
+    def __init__(self):
+        self.fitted = False
+
+    def fit(self, X: Any, y: Any) -> None:
+        self.fitted = True
+
+    def predict(self, X: Any) -> Any:
+        return [0 for _ in range(len(X))]
 
 
 class StubTrainingEngine(TrainingEngine):

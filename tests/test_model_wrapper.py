@@ -3,9 +3,8 @@ from typing import Any
 from plaix.core.model import AnomalyModel
 
 
-class FakeModel(AnomalyModel):
+class DummyBackend:
     def __init__(self):
-        super().__init__(model_type="fake", model_config={}, sport="cricket")
         self.fitted = False
 
     def fit(self, X: Any, y: Any) -> None:
@@ -17,13 +16,22 @@ class FakeModel(AnomalyModel):
     def predict_proba(self, X: Any) -> Any:
         return [[0.1, 0.9] for _ in range(len(X))]
 
-    def save_model(self, path: str) -> None:
-        # TODO: simulate save
-        return None
 
-    def load_model(self, path: str) -> None:
-        # TODO: simulate load
-        return None
+class FakeModel(AnomalyModel):
+    def __init__(self):
+        super().__init__(model_type="logistic_regression", model_config={}, sport="cricket")
+        self.model = DummyBackend()
+        self.fitted = False
+
+    def fit(self, X: Any, y: Any) -> None:
+        self.fitted = True
+        self.model.fit(X, y)
+
+    def predict(self, X: Any) -> Any:
+        return self.model.predict(X)
+
+    def predict_proba(self, X: Any) -> Any:
+        return self.model.predict_proba(X)
 
 
 def test_model_fit_and_predict() -> None:
