@@ -1,0 +1,1 @@
+"""Football placeholder implementations."""

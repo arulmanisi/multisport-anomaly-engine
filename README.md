@@ -10,15 +10,15 @@ Open-source engine to detect unusual patterns in sports matches. PLAIX is a mult
   ```
 - Generate synthetic UPS data:
   ```bash
-  python scripts/generate_synthetic_ups_data.py
+  python backend/scripts/generate_synthetic_ups_data.py
   ```
 - Train the UPS model (logistic regression):
   ```bash
-  PYTHONPATH=src python scripts/train_ups_model.py
+  PYTHONPATH=backend/src python backend/scripts/train_ups_model.py
   ```
 - Run end-to-end demo (UPS scoring + model inference):
   ```bash
-  PYTHONPATH=src python scripts/run_end_to_end_demo.py
+  PYTHONPATH=backend/src python backend/scripts/run_end_to_end_demo.py
   ```
 
 ## PLAIX MVP (Day 1)
@@ -173,9 +173,9 @@ flowchart LR
 ## CLI Usage
 Single prediction with precomputed baseline stats:
 ```bash
-PYTHONPATH=src python -m plaix.cli predict-single \
+PYTHONPATH=backend/src python -m plaix.cli predict-single \
   --input '{"player_id":"P1","match_format":"T20","baseline_mean_runs":22,"baseline_std_runs":8,"current_runs":40,"venue_flatness":0.6,"opposition_strength":0.5,"batting_position":4}' \
-  --model models/ups_logreg.pkl
+  --model backend/models/ups_logreg.pkl
 ```
 Sample output:
 ```
