@@ -109,6 +109,19 @@ Sample CSV: `data/plaix_sample_events.csv`
 3) Register the handler in `plaix.api.main` (via the core registry).
 4) Add tests covering dispatch and sport-specific scoring.
 
+## Running the Backend
+```bash
+cd backend
+uvicorn app.main:app --reload --port 8000
+```
+
+## Running the Streamlit UI
+Set the API URL (defaults to http://localhost:8000/predict/single) and launch:
+```bash
+PLAIX_API_URL=http://localhost:8000/predict/single streamlit run ui/demo_streamlit/demo_ui.py
+```
+The UI will call the Plaix.ai backend and display UPS score, bucket, baseline flag, and model outputs.
+
 ## Architecture Overview
 ```mermaid
 flowchart LR
