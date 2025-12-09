@@ -8,14 +8,21 @@ from pathlib import Path
 from typing import Any, Dict, List
 
 from plaix.core.model import AnomalyModel
-from plaix.sports.cricket.features import CricketFeatureExtractor, CricketFeatureExtractionInput
+from plaix.core.ups_scorer import BaselineStats, UPSScorer
+from plaix.sports.cricket.features import CricketFeatureExtractor
+
+
+class DummyHistoryProvider:
+    """Simple history provider that returns empty history (baseline provided via input)."""
+
+    def get_player_innings_history(self, player_id: str, match_format: str):
+        return []
 
 
 def load_model(model_path: Path) -> AnomalyModel:
-    """Load a trained model artifact (mock placeholder)."""
-    # TODO: instantiate AnomalyModel with correct model_type/config and call load_model(model_path).
-    model = AnomalyModel(model_type="placeholder", model_config={}, sport="cricket")
-    # model.load_model(str(model_path))
+    """Load a trained model artifact."""
+    model = AnomalyModel(model_type="logistic_regression", model_config={}, sport="cricket")
+    model.load_model(str(model_path))
     return model
 
 
@@ -33,31 +40,91 @@ def build_feature_extractor() -> CricketFeatureExtractor:
     return CricketFeatureExtractor()
 
 
+def build_ups_scorer() -> UPSScorer:
+    """Construct UPS scorer with dummy history provider."""
+    return UPSScorer(DummyHistoryProvider())
+
+
+def extract_features_from_payload(payload: Dict[str, Any]) -> Dict[str, float]:
+    """Build feature vector consistent with training."""
+    return {
+        "baseline_mean_runs": float(payload["baseline_mean_runs"]),
+        "baseline_std_runs": float(payload["baseline_std_runs"]),
+        "current_runs": float(payload["current_runs"]),
+        "venue_flatness": float(payload.get("venue_flatness", 0.5)),
+        "opposition_strength": float(payload.get("opposition_strength", 0.5)),
+        "batting_position": int(payload.get("batting_position", 4)),
+    }
+
+
 def run_predict_single(args: argparse.Namespace) -> None:
     """Run anomaly scoring for a single payload."""
     payload = parse_json_input(args.input)
-    feature_extractor = build_feature_extractor()
     model = load_model(Path(args.model))
+    ups_scorer = build_ups_scorer()
 
-    # TODO: clean/validate payload; wrap into CricketFeatureExtractionInput after feature extraction.
-    # For now, assume payload is already a feature dict.
-    features = payload.get("features", payload)
-    # TODO: call model.predict / predict_proba with proper feature structure.
-    ups_score = 0.0  # placeholder
-    is_anomalous = ups_score > 0.5  # placeholder threshold
+    # Use provided baseline stats if present; otherwise use UPS scorer to compute baseline.
+    if "baseline_mean_runs" not in payload or "baseline_std_runs" not in payload:
+        # TODO: call ups_scorer.compute_player_baseline with real history.
+        baseline = BaselineStats(mean_runs=20.0, std_runs=15.0, num_innings=0, source="default")
+        payload["baseline_mean_runs"] = baseline.mean_runs
+        payload["baseline_std_runs"] = baseline.std_runs
 
-    print(json.dumps({"ups_score": ups_score, "is_anomalous": is_anomalous}, indent=2))
+    ups_score = ups_scorer.compute_ups_score(
+        payload.get("player_id", "unknown"),
+        payload.get("match_format", "T20"),
+        current_runs=float(payload["current_runs"]),
+    )
+    flag, bucket = ups_scorer.classify_ups(ups_score)
+
+    features = extract_features_from_payload(payload)
+    model_proba = model.predict_proba([[features[c] for c in features]])[0][1]
+    model_label = int(model.predict([[features[c] for c in features]])[0])
+
+    output = {
+        "ups_score": ups_score,
+        "ups_bucket": bucket,
+        "ups_anomaly_flag_baseline": flag,
+        "model_anomaly_probability": float(model_proba),
+        "model_anomaly_label": model_label,
+    }
+    print(json.dumps(output, indent=2))
 
 
 def run_predict_batch(args: argparse.Namespace) -> None:
-    """Run anomaly scoring for a batch file (JSON/CSV placeholder)."""
+    """Run anomaly scoring for a batch file."""
     batch_path = Path(args.input)
-    # TODO: support CSV/JSON loading and batch feature extraction.
-    # For now, just echo placeholder outputs.
+    payloads = json.loads(batch_path.read_text())
+    model = load_model(Path(args.model))
+    ups_scorer = build_ups_scorer()
+
     results: List[Dict[str, Any]] = []
-    for _ in range(1):  # placeholder loop
-        ups_score = 0.0
-        results.append({"ups_score": ups_score, "is_anomalous": ups_score > 0.5})
+    for payload in payloads:
+        if "baseline_mean_runs" not in payload or "baseline_std_runs" not in payload:
+            baseline = BaselineStats(mean_runs=20.0, std_runs=15.0, num_innings=0, source="default")
+            payload["baseline_mean_runs"] = baseline.mean_runs
+            payload["baseline_std_runs"] = baseline.std_runs
+
+        ups_score = ups_scorer.compute_ups_score(
+            payload.get("player_id", "unknown"),
+            payload.get("match_format", "T20"),
+            current_runs=float(payload["current_runs"]),
+        )
+        flag, bucket = ups_scorer.classify_ups(ups_score)
+        features = extract_features_from_payload(payload)
+        model_proba = model.predict_proba([[features[c] for c in features]])[0][1]
+        model_label = int(model.predict([[features[c] for c in features]])[0])
+
+        results.append(
+            {
+                "ups_score": ups_score,
+                "ups_bucket": bucket,
+                "ups_anomaly_flag_baseline": flag,
+                "model_anomaly_probability": float(model_proba),
+                "model_anomaly_label": model_label,
+            }
+        )
+
     print(json.dumps({"results": results}, indent=2))
 
 
