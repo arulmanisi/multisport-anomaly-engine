@@ -3,6 +3,24 @@
 
 Open-source engine to detect unusual patterns in sports matches. PLAIX is a multi-sport anomaly and intelligence platform; it currently ships a cricket scorer and a football placeholder, with a structure to add more sports easily.
 
+## Quick Start
+- Install dependencies (Python 3.10+):
+  ```bash
+  pip install -r requirements.txt
+  ```
+- Generate synthetic UPS data:
+  ```bash
+  python scripts/generate_synthetic_ups_data.py
+  ```
+- Train the UPS model (logistic regression):
+  ```bash
+  PYTHONPATH=src python scripts/train_ups_model.py
+  ```
+- Run end-to-end demo (UPS scoring + model inference):
+  ```bash
+  PYTHONPATH=src python scripts/run_end_to_end_demo.py
+  ```
+
 ## PLAIX MVP (Day 1)
 - Backend MVP for cricket anomaly detection (placeholder rule-based scoring).
 - FastAPI service with `/health` and `/score` using `plaix` models.
@@ -91,6 +109,17 @@ Sample CSV: `data/plaix_sample_events.csv`
 3) Register the handler in `plaix.api.main` (via the core registry).
 4) Add tests covering dispatch and sport-specific scoring.
 
+## Architecture Overview
+```mermaid
+flowchart LR
+    A[Raw Input (match/innings)] --> B[FeatureExtractor]
+    B --> C[UPSScorer<br/>(baseline + UPS)]
+    C --> D[Feature Vector<br/>(UPS + context)]
+    D --> E[ModelWrapper<br/>(Logistic Regression)]
+    E --> F[Anomaly Prediction<br/>(probability + label)]
+    F --> G[CLI / REST Response]
+```
+
 ## Feature extraction (cricket design)
 - Core abstractions: `plaix.core.features.FeatureExtractor`, `FeatureExtractionInput`, `FeatureExtractionOutput`.
 - Cricket structure: `plaix.sports.cricket.features.CricketFeatureExtractor` with buckets:
@@ -140,6 +169,54 @@ Sample CSV: `data/plaix_sample_events.csv`
 - `plaix.core.ups_scorer.UPSScorer`: computes UPS (Unexpected Performance Spike) from historical baselines and current performance.
 - Methods: `compute_player_baseline`, `compute_match_performance`, `compute_ups_score`, `is_anomalous`, `score_player`.
 - Uses z-score style deviation across runs/strike rate/wickets/economy (placeholders/assumptions); configurable per sport via metric_config.
+
+## CLI Usage
+Single prediction with precomputed baseline stats:
+```bash
+PYTHONPATH=src python -m plaix.cli predict-single \
+  --input '{"player_id":"P1","match_format":"T20","baseline_mean_runs":22,"baseline_std_runs":8,"current_runs":40,"venue_flatness":0.6,"opposition_strength":0.5,"batting_position":4}' \
+  --model models/ups_logreg.pkl
+```
+Sample output:
+```
+{
+  "ups_score": 2.25,
+  "ups_bucket": "strong_spike",
+  "ups_anomaly_flag_baseline": 1,
+  "model_anomaly_probability": 0.98,
+  "model_anomaly_label": 1
+}
+```
+
+## REST API Usage
+Example (FastAPI-style inference service) `POST /predict/single`:
+```bash
+curl -X POST http://localhost:8000/predict/single \
+  -H "Content-Type: application/json" \
+  -d '{
+        "payload": {
+          "player_id": "P1",
+          "match_format": "T20",
+          "baseline_mean_runs": 22,
+          "baseline_std_runs": 8,
+          "current_runs": 40,
+          "venue_flatness": 0.6,
+          "opposition_strength": 0.5,
+          "batting_position": 4
+        }
+      }'
+```
+Sample response:
+```json
+{
+  "ups_score": 2.25,
+  "ups_bucket": "strong_spike",
+  "ups_anomaly_flag_baseline": 1,
+  "model_anomaly_probability": 0.98,
+  "model_anomaly_label": 1,
+  "explanation": null
+}
+```
 
 ## Disclaimer
 
