@@ -108,7 +108,7 @@ class UPSScorer:
         if global_baseline:
             return global_baseline
 
-        return BaselineStats(mean_runs=20.0, std_runs=max(15.0, self.sigma_min), num_innings=0, source="default")
+        return BaselineStats(mean_runs=20.0, std_runs=15.0, num_innings=0, source="default")
 
     def compute_ups_score(self, player_id: str, match_format: str, current_runs: float) -> float:
         """
