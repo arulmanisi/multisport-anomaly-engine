@@ -49,6 +49,13 @@ def main() -> None:
             data = resp.json()
             st.subheader("Prediction")
             st.json(data)
+            narrative_title = data.get("narrative_title", "")
+            narrative_summary = data.get("narrative_summary", "")
+            st.subheader("AI Narrative")
+            if narrative_title:
+                st.markdown(f"**{narrative_title}**")
+            if narrative_summary:
+                st.write(narrative_summary)
         except Exception as exc:  # pylint: disable=broad-except
             st.error(f"Request failed: {exc}")
             st.info("Check PLAIX_API_URL or backend availability.")
