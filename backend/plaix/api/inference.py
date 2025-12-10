@@ -12,6 +12,7 @@ from pydantic import BaseModel
 from plaix.core.model import AnomalyModel
 from plaix.core.ups_scorer import BaselineStats, UPSScorer
 from plaix.sports.cricket.features import CricketFeatureExtractor
+from llm.anomaly_narrator import AnomalyEvent, AnomalyNarrator, DummyLLMClient
 
 
 class SinglePredictRequest(BaseModel):
@@ -30,6 +31,8 @@ class SinglePredictResponse(BaseModel):
     model_anomaly_probability: float
     model_anomaly_label: int
     explanation: str | None = None
+    narrative_title: str | None = None
+    narrative_summary: str | None = None
 
 
 class BatchPredictRequest(BaseModel):
@@ -71,6 +74,7 @@ class InferenceService:
         self.feature_extractor = self._load_feature_extractor()
         self.ups_scorer = UPSScorer(DummyHistoryProvider())
         self.model = self._load_model(model_path)
+        self.narrator = AnomalyNarrator(DummyLLMClient())
 
     def _load_feature_extractor(self) -> CricketFeatureExtractor:
         """Construct feature extractor (placeholder)."""
@@ -102,6 +106,29 @@ class InferenceService:
         features = self.preprocess_input(payload)
         proba = float(self.model.predict_proba([[features[c] for c in features]])[0][1])
         label = int(self.model.predict([[features[c] for c in features]])[0])
+        event = AnomalyEvent(
+            player_id=payload.get("player_id", "unknown"),
+            match_format=payload.get("match_format", "T20"),
+            team=payload.get("team"),
+            opposition=payload.get("opposition"),
+            venue=payload.get("venue"),
+            baseline_mean_runs=payload["baseline_mean_runs"],
+            baseline_std_runs=payload["baseline_std_runs"],
+            current_runs=float(payload["current_runs"]),
+            ups_score=ups_score,
+            ups_bucket=bucket,
+            ups_anomaly_flag_baseline=flag,
+            model_anomaly_probability=proba,
+            model_anomaly_label=label,
+            match_context=payload.get("match_context", {}),
+        )
+        narration = {"narrative_title": None, "narrative_summary": None}
+        try:
+            narration = self.narrator.generate_description(event)
+        except Exception:
+            # TODO: add logging; narration optional
+            narration = {"narrative_title": None, "narrative_summary": None}
+
         return SinglePredictResponse(
             ups_score=ups_score,
             ups_bucket=bucket,
@@ -109,6 +136,8 @@ class InferenceService:
             model_anomaly_probability=proba,
             model_anomaly_label=label,
             explanation=None,
+            narrative_title=narration.get("narrative_title"),
+            narrative_summary=narration.get("narrative_summary"),
         )
 
 

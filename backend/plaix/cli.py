@@ -10,6 +10,7 @@ from typing import Any, Dict, List
 from plaix.core.model import AnomalyModel
 from plaix.core.ups_scorer import BaselineStats, UPSScorer
 from plaix.sports.cricket.features import CricketFeatureExtractor
+from llm.anomaly_narrator import AnomalyEvent, AnomalyNarrator, DummyLLMClient
 
 
 class DummyHistoryProvider:
@@ -62,6 +63,7 @@ def run_predict_single(args: argparse.Namespace) -> None:
     payload = parse_json_input(args.input)
     model = load_model(Path(args.model))
     ups_scorer = build_ups_scorer()
+    narrator = AnomalyNarrator(DummyLLMClient())
 
     # Use provided baseline stats if present; otherwise use UPS scorer to compute baseline.
     if "baseline_mean_runs" not in payload or "baseline_std_runs" not in payload:
@@ -81,12 +83,36 @@ def run_predict_single(args: argparse.Namespace) -> None:
     model_proba = model.predict_proba([[features[c] for c in features]])[0][1]
     model_label = int(model.predict([[features[c] for c in features]])[0])
 
+    event = AnomalyEvent(
+        player_id=payload.get("player_id", "unknown"),
+        match_format=payload.get("match_format", "T20"),
+        team=payload.get("team"),
+        opposition=payload.get("opposition"),
+        venue=payload.get("venue"),
+        baseline_mean_runs=payload["baseline_mean_runs"],
+        baseline_std_runs=payload["baseline_std_runs"],
+        current_runs=float(payload["current_runs"]),
+        ups_score=ups_score,
+        ups_bucket=bucket,
+        ups_anomaly_flag_baseline=flag,
+        model_anomaly_probability=float(model_proba),
+        model_anomaly_label=model_label,
+        match_context=payload.get("match_context", {}),
+    )
+    narration = {"narrative_title": None, "narrative_summary": None}
+    try:
+        narration = narrator.generate_description(event)
+    except Exception:
+        narration = {"narrative_title": None, "narrative_summary": None}
+
     output = {
         "ups_score": ups_score,
         "ups_bucket": bucket,
         "ups_anomaly_flag_baseline": flag,
         "model_anomaly_probability": float(model_proba),
         "model_anomaly_label": model_label,
+        "narrative_title": narration.get("narrative_title"),
+        "narrative_summary": narration.get("narrative_summary"),
     }
     print(json.dumps(output, indent=2))
 
