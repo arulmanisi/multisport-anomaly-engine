@@ -10,7 +10,8 @@ from typing import Any, Dict, List
 from plaix.core.model import AnomalyModel
 from plaix.core.ups_scorer import BaselineStats, UPSScorer
 from plaix.sports.cricket.features import CricketFeatureExtractor
-from llm.anomaly_narrator import AnomalyEvent, AnomalyNarrator, DummyLLMClient
+from llm.anomaly_narrator import AnomalyEvent, AnomalyNarrator
+from llm.factory import get_llm_client_from_env
 
 
 class DummyHistoryProvider:
@@ -63,7 +64,7 @@ def run_predict_single(args: argparse.Namespace) -> None:
     payload = parse_json_input(args.input)
     model = load_model(Path(args.model))
     ups_scorer = build_ups_scorer()
-    narrator = AnomalyNarrator(DummyLLMClient())
+    narrator = AnomalyNarrator(get_llm_client_from_env())
 
     # Use provided baseline stats if present; otherwise use UPS scorer to compute baseline.
     if "baseline_mean_runs" not in payload or "baseline_std_runs" not in payload:

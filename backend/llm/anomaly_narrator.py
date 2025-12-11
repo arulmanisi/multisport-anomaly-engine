@@ -4,13 +4,13 @@ from __future__ import annotations
 
 import json
 from dataclasses import dataclass, asdict
-from typing import Any, Dict, Protocol
+from typing import Any, Dict, Protocol, Optional
 
 
 class LLMClient(Protocol):
     """Protocol for LLM clients."""
 
-    def generate(self, prompt: str) -> str:
+    def generate(self, prompt: str, temperature: Optional[float] = None, max_tokens: Optional[int] = None) -> str:
         """Return a string response given a prompt."""
 
 
@@ -37,8 +37,8 @@ class AnomalyEvent:
 class DummyLLMClient:
     """Rule-based dummy LLM client (no external calls)."""
 
-    def generate(self, prompt: str) -> str:  # pragma: no cover - simple passthrough
-        return "DummyLLMClient does not use prompt parsing."
+    def generate(self, prompt: str, temperature: Optional[float] = None, max_tokens: Optional[int] = None) -> str:  # pragma: no cover - simple passthrough
+        return "DUMMY_RESPONSE"
 
     def generate_from_event(self, event: AnomalyEvent) -> Dict[str, str]:
         """Return a basic narrative without external LLM calls."""

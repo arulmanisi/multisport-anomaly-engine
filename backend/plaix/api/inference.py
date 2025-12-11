@@ -12,7 +12,8 @@ from pydantic import BaseModel
 from plaix.core.model import AnomalyModel
 from plaix.core.ups_scorer import BaselineStats, UPSScorer
 from plaix.sports.cricket.features import CricketFeatureExtractor
-from llm.anomaly_narrator import AnomalyEvent, AnomalyNarrator, DummyLLMClient
+from llm.anomaly_narrator import AnomalyEvent, AnomalyNarrator
+from llm.factory import get_llm_client_from_env
 
 
 class SinglePredictRequest(BaseModel):
@@ -74,7 +75,7 @@ class InferenceService:
         self.feature_extractor = self._load_feature_extractor()
         self.ups_scorer = UPSScorer(DummyHistoryProvider())
         self.model = self._load_model(model_path)
-        self.narrator = AnomalyNarrator(DummyLLMClient())
+        self.narrator = AnomalyNarrator(get_llm_client_from_env())
 
     def _load_feature_extractor(self) -> CricketFeatureExtractor:
         """Construct feature extractor (placeholder)."""
