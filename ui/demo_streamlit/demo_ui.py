@@ -6,6 +6,7 @@ from pathlib import Path
 import pandas as pd
 import requests
 import streamlit as st
+from ui.demo_streamlit import styles
 
 API_URL = os.getenv("PLAIX_API_URL", "http://localhost:8000/predict/single")
 API_ROOT = API_URL.rsplit("/predict/single", 1)[0] if "/predict/single" in API_URL else API_URL
@@ -181,73 +182,61 @@ def compute_volatility_driver(recent_events_df: pd.DataFrame) -> str:
 
 def main() -> None:
     st.set_page_config(
-        page_title="Cricket UPS Anomaly Engine",
+        page_title="PLAIX Intelligence Platform",
         page_icon="🏏",
         layout="wide",
     )
+    st.markdown(styles.CUSTOM_CSS, unsafe_allow_html=True)
 
-    st.title("🏏 AI-Powered Cricket Anomaly Engine")
+    st.title("🏏 PLAIX Intelligence Platform")
     st.markdown(
         """
-        This demo shows how an AI-driven anomaly engine evaluates a single cricket innings.
-
-        It combines:
-        - **Statistical baselines** (player's typical performance),
-        - **UPS score** (*Unexpected Performance Spike*),
-        - **Anomaly model probability**, and
-        - An **AI-generated narrative** explaining what happened.
+        **Advanced Anomaly Detection & Narrative Intelligence**
+        
+        Analyze player performance with depth:
+        - **UPS Score**: Quantify statistical deviation from baselines.
+        - **Contextual Intelligence**: Adjust for venue, opposition, and match situation.
+        - **Narrative Engine**: Automated, human-readable insights.
         """
     )
-
-    with st.expander("How to pitch this demo"):
-        st.markdown(
-            """
-            **Suggested 60–90 second talk track:**
-            1. "This is an AI anomaly engine, not a win predictor."
-            2. "We build a baseline of expected performance per player and format."
-            3. "UPS quantifies how unexpected an innings is vs historical behavior."
-            4. "The ML model adds context and outputs anomaly probability."
-            5. "The LLM narrates results so users get an immediate explanation."
-            6. "The trend view shows behavior across recent innings—volatility, breakouts, stabilization."
-            """
-        )
 
     df_events = load_events_dataset()
 
+    with st.sidebar:
+        st.header("Simulation Parameters")
+        with st.form("prediction_form"):
+            st.caption("Configure innings context")
+            player_id = player_selector("Player", df_events, default="P1")
+            match_format = st.selectbox("Format", ["T20", "ODI", "TEST"], index=0)
+            batting_position = st.number_input("Batting position", min_value=1, max_value=11, value=4)
+            
+            st.divider()
+            st.caption("Performance Data")
+            current_runs = st.number_input("Current runs", value=40.0, step=1.0)
+            baseline_mean_runs = st.number_input("Baseline mean runs", value=22.0, step=1.0)
+            baseline_std_runs = st.number_input("Baseline std runs", value=8.0, step=1.0)
+            
+            st.divider()
+            st.caption("Context")
+            venue_flatness = st.slider("Venue flatness", 0.0, 1.0, 0.6)
+            opposition_strength = st.slider("Opposition strength", 0.0, 1.0, 0.5)
+            tone = st.selectbox(
+                "Narrative Tone",
+                options=["analyst", "commentator", "casual"],
+                index=0,
+            )
+            
+            submitted = st.form_submit_button("Run Analysis", type="primary")
+
     tab1, tab2, tab3, tab4, tab5 = st.tabs(
-        ["Single Innings", "Recent Innings Trend", "Top Anomalies", "Anomaly Feed", "Live Match Mode"]
+        ["Single Innings", "Recent Trend", "Top Anomalies", "Anomaly Feed", "Live Scenario"]
     )
 
     with tab1:
-        left_col, right_col = st.columns([1, 1.2])
-
-        with left_col:
-            st.subheader("Innings Input")
-            with st.form("prediction_form"):
-                c1, c2 = st.columns(2)
-                player_id = player_selector("Player", df_events, default="P1")
-                match_format = c1.selectbox("Format", ["T20", "ODI", "TEST"], index=0)
-                batting_position = c1.number_input("Batting position", min_value=1, max_value=7, value=4)
-
-                baseline_mean_runs = c2.number_input("Baseline mean runs", value=22.0, step=1.0)
-                baseline_std_runs = c2.number_input("Baseline std runs", value=8.0, step=1.0)
-
-                current_runs = st.number_input("Current runs", value=40.0, step=1.0)
-                venue_flatness = st.slider("Venue flatness", 0.0, 1.0, 0.6)
-                opposition_strength = st.slider("Opposition strength", 0.0, 1.0, 0.5)
-                tone = st.selectbox(
-                    "Narrative Tone",
-                    options=["analyst", "commentator", "casual"],
-                    index=0,
-                    help="Controls how the AI narrative is written.",
-                )
-
-                submitted = st.form_submit_button("Run Anomaly Prediction")
-
-        with right_col:
-            st.subheader("Anomaly Summary")
-            if not submitted:
-                st.info("Fill in the innings details on the left and click 'Run Anomaly Prediction' to see results here.")
+        st.subheader("Anomaly Analysis")
+        right_col = st.container()
+        if not submitted:
+            st.info("👈 Configure parameters in the sidebar to run a simulation.")
 
         if submitted:
             payload = {
@@ -567,7 +556,7 @@ def main() -> None:
                 if batting_pos is not None and not pd.isna(batting_pos):
                     context_bits.append(f"Batting position {int(batting_pos)} influences scoring opportunity.")
                 if not context_bits:
-                    context_bits.append("Context: baseline vs current runs is the primary signal in this demo.")
+                    context_bits.append("Context: baseline vs current runs is the primary signal.")
                 st.markdown(f"- {driver_spike}")
                 st.markdown(f"- {driver_volatility}")
                 for bit in context_bits:
@@ -638,7 +627,7 @@ Key stats:
                 selected_player = st.selectbox(
                     "Quick jump to player", options=display_df["player_id"].unique()
                 )
-                st.caption("Tip: Use this player in the Single Innings tab to demo.")
+                st.caption("Tip: Use this player in the Single Innings tab to analyze.")
 
     with tab4:
         st.subheader("Anomaly Feed")
@@ -761,7 +750,7 @@ Key stats:
                     st.session_state["selected_event_id"] = None
 
     with tab5:
-        st.subheader("Live Match Mode")
+        st.subheader("Live Scenario Simulator")
         controls_col, live_col = st.columns([1, 2])
 
         if "live_session_id" not in st.session_state:
