@@ -687,7 +687,7 @@ Key stats:
                     drivers = item.get("key_drivers", []) or []
                     for d in drivers[:3]:
                         st.markdown(f"- {d}")
-                    button_key = item.get("event_id") or f"detail_{meta}_{idx}"
+                    button_key = f"{item.get('event_id')}_{idx}" if item.get("event_id") else f"detail_{meta}_{idx}"
                     if st.button("View details", key=button_key):
                         st.session_state["selected_event_id"] = item.get("event_id")
                     st.divider()

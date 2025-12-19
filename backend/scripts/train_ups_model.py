@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+import json
+from datetime import datetime, timezone
 from pathlib import Path
 
 import pandas as pd
@@ -49,6 +51,29 @@ def main() -> None:
     print(f"Validation precision: {prec:.3f}")
     print(f"Validation recall: {rec:.3f}")
     print(f"Saved model to {MODEL_PATH}")
+
+    # Save metrics
+    metrics = {
+        "accuracy": acc,
+        "precision": prec,
+        "recall": rec,
+    }
+    metrics_path = MODEL_PATH.parent / "metrics.json"
+    with open(metrics_path, "w") as f:
+        json.dump(metrics, f, indent=2)
+    print(f"Saved metrics to {metrics_path}")
+
+    # Save metadata
+    meta = {
+        "trained_at": datetime.now(timezone.utc).isoformat(),
+        "model_type": "logistic_regression",
+        "config": {"max_iter": 200},
+        "data_source": str(DATA_PATH.name),
+    }
+    meta_path = MODEL_PATH.parent / "meta.json"
+    with open(meta_path, "w") as f:
+        json.dump(meta, f, indent=2)
+    print(f"Saved metadata to {meta_path}")
 
 
 if __name__ == "__main__":

@@ -1,0 +1,8 @@
+{
+  "trained_at": "2025-12-19T07:29:31.305172+00:00",
+  "model_type": "logistic_regression",
+  "config": {
+    "max_iter": 200
+  },
+  "data_source": "synthetic_ups_dataset.csv"
+}

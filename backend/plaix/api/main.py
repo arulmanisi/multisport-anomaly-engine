@@ -36,6 +36,15 @@ def health() -> dict[str, str]:
     return {"status": "ok", "service": settings.service_name}
 
 
+@app.get("/internal/metrics")
+def internal_metrics() -> dict[str, int]:
+    """Expose basic service metrics."""
+    return {
+        "active_sports": len(registry._handlers),
+        "feed_items_loaded": len(feed_df) if feed_df is not None else 0,
+    }
+
+
 @app.post("/score", response_model=list[dict])
 def score(batch: list[dict]) -> list[dict]:
     """Backward-compatible scoring without sport dispatch (assumes cricket)."""
