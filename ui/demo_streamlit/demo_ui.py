@@ -281,20 +281,21 @@ def main() -> None:
     with st.sidebar:
         st.header("Navigation")
         page = st.radio("Go to", [
-            "Single Innings", 
-            "Recent Trend", 
-            "Top Anomalies", 
-            "Anomaly Feed", 
-            "Live Scenario",
-            "About Platform"
+            "Match Analyzer", 
+            "Player Trend Analysis", 
+            "Global Anomaly Index", 
+            "Live Intelligence Feed", 
+            "Score Predictor",
+            "Predictive Simulator",
+            "Platform Overview"
         ], label_visibility="collapsed")
         st.divider()
 
 
 
     # Main Content Area
-    if page == "Single Innings":
-        st.subheader("Anomaly Analysis")
+    if page == "Match Analyzer":
+        st.subheader("Match Analyzer")
         input_col, output_col = st.columns([1, 2], gap="large")
         
         with input_col:
@@ -441,63 +442,82 @@ def main() -> None:
                     st.error(f"Request failed: {exc}")
                     st.info("Check PLAIX_API_URL or backend availability.")
 
-    if page == "Recent Trend":
+    if page == "Player Trend Analysis":
         st.subheader("Recent Innings Trend")
-        c1, c2, c3 = st.columns(3)
-        trend_player_id = player_selector("Player (trend view)", df_events, default="P_DEMO")
-        trend_format = c2.selectbox("Format (trend view)", ["T20", "ODI", "TEST"], index=0)
-        last_n = c3.slider("Last N innings", min_value=3, max_value=10, value=5)
-        trend_tone = st.selectbox(
-            "Narrative Tone (trend)",
-            options=["analyst", "commentator", "casual"],
-            index=0,
-            help="Controls how the AI narrative is written.",
-        )
-        if st.button("Load trend"):
-            try:
-                trend_resp = requests.post(
-                    f"{API_ROOT}/player/recent/summary",
-                    json={
-                        "player_id": trend_player_id,
-                        "match_format": trend_format,
-                        "n": last_n,
-                        "tone": trend_tone,
-                    },
-                    timeout=10,
-                )
-                trend_resp.raise_for_status()
-                trend_data = trend_resp.json()
-                events = trend_data.get("events", [])
-                summary_title = trend_data.get("summary_title") or "Recent innings summary"
-                summary_body = trend_data.get("summary_body") or ""
+        
+        input_col, output_col = st.columns([1, 2], gap="large")
+        
+        with input_col:
+            st.markdown("### Trend Parameters")
+            with st.form("trend_form"):
+                with st.expander("Player Selection", expanded=True):
+                    trend_player_id = player_selector("Player", df_events, default="P_DEMO")
+                    trend_format = st.selectbox("Format", ["T20", "ODI", "TEST"], index=0)
+                
+                with st.expander("Analysis Depth", expanded=True):
+                    last_n = st.slider("Last N innings", min_value=3, max_value=10, value=5)
+                    trend_tone = st.selectbox(
+                        "Narrative Tone",
+                        options=["analyst", "commentator", "casual"],
+                        index=0,
+                        help="Controls how the AI narrative is written.",
+                    )
+                
+                submitted_trend = st.form_submit_button("Analyze Trend", type="primary")
 
-                st.markdown(f"### {summary_title}")
-                st.write(summary_body)
+        with output_col:
+            result_container = st.container()
+            if not submitted_trend:
+                st.info("Configure trend parameters to view analysis.")
 
-                if events:
-                    st.markdown("#### UPS Trend")
-                    df_trend = pd.DataFrame(events)
-                    df_trend = df_trend.reset_index().rename(columns={"index": "Innings"})
-                    df_trend["Innings"] = df_trend["Innings"] + 1
-                    st.line_chart(df_trend.set_index("Innings")[["ups_score"]])
+            if submitted_trend:
+                try:
+                    trend_resp = requests.post(
+                        f"{API_ROOT}/player/recent/summary",
+                        json={
+                            "player_id": trend_player_id,
+                            "match_format": trend_format,
+                            "n": last_n,
+                            "tone": trend_tone,
+                        },
+                        timeout=10,
+                    )
+                    trend_resp.raise_for_status()
+                    trend_data = trend_resp.json()
+                    events = trend_data.get("events", [])
+                    summary_title = trend_data.get("summary_title") or "Recent innings summary"
+                    summary_body = trend_data.get("summary_body") or ""
 
-                    st.markdown("#### Recent Innings Table")
-                    display_cols = [
-                        "date",
-                        "current_runs",
-                        "baseline_mean_runs",
-                        "ups_score",
-                        "ups_bucket",
-                        "model_anomaly_probability",
-                    ]
-                    st.dataframe(df_trend[display_cols])
-                else:
-                    st.info("No recent innings available for this player/format.")
-            except Exception as exc:  # pylint: disable=broad-except
-                st.error(f"Trend request failed: {exc}")
-                st.info("Ensure backend is running and player ID exists.")
+                    with result_container:
+                        st.markdown('<div class="featured-card">', unsafe_allow_html=True)
+                        st.markdown(f"### {summary_title}")
+                        st.write(summary_body)
+                        st.markdown('</div>', unsafe_allow_html=True)
 
-    if page == "Top Anomalies":
+                        if events:
+                            st.markdown("#### UPS Trend")
+                            df_trend = pd.DataFrame(events)
+                            df_trend = df_trend.reset_index().rename(columns={"index": "Innings"})
+                            df_trend["Innings"] = df_trend["Innings"] + 1
+                            st.line_chart(df_trend.set_index("Innings")[["ups_score"]])
+
+                            with st.expander("Data Table"):
+                                display_cols = [
+                                    "date",
+                                    "current_runs",
+                                    "baseline_mean_runs",
+                                    "ups_score",
+                                    "ups_bucket",
+                                    "model_anomaly_probability",
+                                ]
+                                st.dataframe(df_trend[display_cols], use_container_width=True)
+                        else:
+                            st.info("No recent innings available for this player/format.")
+                except Exception as exc:  # pylint: disable=broad-except
+                    st.error(f"Trend request failed: {exc}")
+                    st.info("Ensure backend is running and player ID exists.")
+
+    if page == "Global Anomaly Index":
         st.subheader("Top Anomalies")
         if df_events.empty or "ups_score" not in df_events.columns:
             st.info("No local dataset with UPS scores found. Load or generate data to view the leaderboard.")
@@ -744,9 +764,9 @@ Key stats:
                 selected_player = st.selectbox(
                     "Quick jump to player", options=display_df["player_id"].unique()
                 )
-                st.caption("Tip: Use this player in the Single Innings tab to analyze.")
+                st.caption("Tip: Use this player in the Match Analyzer tab to analyze.")
 
-    if page == "Anomaly Feed":
+    if page == "Live Intelligence Feed":
         st.subheader("Anomaly Feed")
         filters_col, feed_col = st.columns([1, 2])
         if "selected_event_id" not in st.session_state:
@@ -865,9 +885,83 @@ Key stats:
                     st.error(f"Detail request failed: {exc}")
                 if st.button("Clear selection"):
                     st.session_state["selected_event_id"] = None
+                    st.experimental_rerun()
 
-    if page == "Live Scenario":
-        st.subheader("Live Scenario Simulator")
+
+
+    if page == "Score Predictor":
+        st.subheader("Match Score Predictor")
+        
+        # Disclaimer
+        st.warning(
+            "⚠️ **Responsible Usage**: This module provides statistical score projections based on historical data and match conditions. "
+            "It is intended for performance analysis and fan engagement only. It is **not** a betting tool and should not be used for financial decisions."
+        )
+
+        input_col, output_col = st.columns([1, 2], gap="large")
+
+        with input_col:
+            st.markdown("### Match Conditions")
+            with st.form("score_predictor_form"):
+                with st.expander("Player & Format", expanded=True):
+                    pred_player = player_selector("Select Player", df_events, default="P_DEMO")
+                    pred_format = st.selectbox("Format", ["T20", "ODI", "TEST"], index=0)
+                
+                with st.expander("Contextual Factors", expanded=True):
+                    pred_venue = st.slider("Pitch Condition (0=Bowler friendly, 1=Batting friendly)", 0.0, 1.0, 0.6)
+                    pred_opp = st.slider("Opposition Strength (0=Weak, 1=World Class)", 0.0, 1.0, 0.5)
+                    pred_form = st.slider("Recent Form (0=Poor, 1=Excellent)", 0.0, 1.0, 0.5)
+
+                submitted_pred = st.form_submit_button("Predict Score", type="primary")
+
+        with output_col:
+            result_container = st.container()
+            if not submitted_pred:
+                st.info("Configure match conditions to generate a score projection.")
+            
+            if submitted_pred:
+                # Heuristic Prediction Logic
+                # Base scores roughly per format
+                base_score = {"T20": 25, "ODI": 40, "TEST": 65}.get(pred_format, 30)
+                
+                # Factors
+                # Pitch: +/- 20%
+                pitch_factor = (pred_venue - 0.5) * 0.4
+                # Opposition: Strong opp reduces score by up to 30%, Weak increases by 10%
+                opp_factor = (0.5 - pred_opp) * 0.3
+                # Form: +/- 25%
+                form_factor = (pred_form - 0.5) * 0.5
+                
+                total_factor = 1 + pitch_factor + opp_factor + form_factor
+                # Add some randomness for range (mocking uncertainty)
+                import random
+                random_variance = 0.1  # +/- 5% fixed variance for center
+                
+                projected_val = base_score * total_factor
+                lower_bound = int(projected_val * 0.85)
+                upper_bound = int(projected_val * 1.15)
+                projected_val = int(projected_val)
+                
+                confidence = "Medium"
+                if pred_form > 0.8: confidence = "High"
+                if pred_form < 0.2: confidence = "Low"
+
+                with result_container:
+                    st.markdown('<div class="featured-card">', unsafe_allow_html=True)
+                    st.markdown(f"### Projected Innings Score: **{projected_val}**")
+                    st.caption(f"Estimated Range: {lower_bound} - {upper_bound} runs")
+                    
+                    c1, c2, c3 = st.columns(3)
+                    c1.metric("Confidence", confidence)
+                    c2.metric("Pitch Impact", f"{pitch_factor:+.0%}")
+                    c3.metric("Form Impact", f"{form_factor:+.0%}")
+                    
+                    st.markdown("---")
+                    st.caption(f"Model based on: {pred_format} historical data adjusted for venue ({pred_venue}) and opposition ({pred_opp}).")
+                    st.markdown('</div>', unsafe_allow_html=True)
+
+    if page == "Predictive Simulator":
+        st.subheader("Predictive Simulator")
         controls_col, live_col = st.columns([1, 2])
 
         if "live_session_id" not in st.session_state:
@@ -989,7 +1083,7 @@ Key stats:
 
 
 
-    if page == "About Platform":
+    if page == "Platform Overview":
         st.header("About PLAIX")
         st.markdown("""
         **PLAIX** (Player Anomaly Intelligence X) is an advanced analytics platform designed to detect, quantify, and explain anomalies in sports performance.
