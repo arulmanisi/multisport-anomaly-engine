@@ -2,11 +2,12 @@
 
 import os
 from pathlib import Path
+from datetime import datetime
 
 import pandas as pd
 import requests
 import streamlit as st
-from ui.demo_streamlit import styles
+import styles
 
 API_URL = os.getenv("PLAIX_API_URL", "http://localhost:8000/predict/single")
 API_ROOT = API_URL.rsplit("/predict/single", 1)[0] if "/predict/single" in API_URL else API_URL
@@ -180,6 +181,84 @@ def compute_volatility_driver(recent_events_df: pd.DataFrame) -> str:
     return f"{volatility}; {trend} (σ std ≈ {std:.2f})"
 
 
+
+def render_top_bar():
+    """Renders a persistent top bar with branding and status."""
+    c1, c2 = st.columns([3, 1])
+    with c1:
+        st.markdown(
+            "<h3 style='margin:0; padding:0;'>🏏 PLAIX Intelligence Platform</h3>", 
+            unsafe_allow_html=True
+        )
+    with c2:
+        st.markdown(
+            f"""
+            <div style='text-align: right; color: #E0E0E0; font-size: 0.85rem; padding-top: 4px;'>
+                Status: <span style='color: #4CAF50; font-weight: 600;'>● Online</span>
+            </div>
+            """,
+            unsafe_allow_html=True
+        )
+    st.divider()
+
+def render_ticker(df: pd.DataFrame):
+    """Renders a scrolling ticker of recent anomalies."""
+    if df.empty or "ups_score" not in df.columns:
+        return
+
+    # Get top 5 recent anomalies
+    recent_anomalies = df[df["ups_score"] > 2.0].sort_values("date", ascending=False).head(5)
+    if recent_anomalies.empty:
+        return
+
+    ticker_items = []
+    for _, row in recent_anomalies.iterrows():
+        item = f"⚡ BREAKING: {row['player_id']} ({row['match_format']}) UPS {row['ups_score']:.2f}"
+        ticker_items.append(item)
+    
+    ticker_text = "   &nbsp;&nbsp;&nbsp;&nbsp;   ".join(ticker_items)
+    
+    st.markdown(
+        f"""
+        <div class="ticker-wrap">
+            <div class="ticker-item">{ticker_text}</div>
+        </div>
+        """,
+        unsafe_allow_html=True
+    )
+
+def render_dashboard_stats(df: pd.DataFrame):
+    """Renders high-level stats cards."""
+    if df.empty or "ups_score" not in df.columns:
+        return
+
+    c1, c2, c3, c4 = st.columns(4)
+    
+    total_anomalies = len(df[df["ups_score"] > 2.0])
+    avg_ups = df["ups_score"].mean()
+    max_ups = df["ups_score"].max()
+    active_players = df["player_id"].nunique()
+
+    metrics = [
+        ("Total Anomalies (24h)", total_anomalies),
+        ("Avg UPS Score", f"{avg_ups:.2f}"),
+        ("Max Spike Detected", f"{max_ups:.2f}"),
+        ("Active Players", active_players),
+    ]
+
+    for col, (label, value) in zip([c1, c2, c3, c4], metrics):
+        with col:
+            st.markdown(
+                f"""
+                <div class="stat-card">
+                    <div class="stat-value">{value}</div>
+                    <div class="stat-label">{label}</div>
+                </div>
+                """,
+                unsafe_allow_html=True
+            )
+    st.markdown("<br>", unsafe_allow_html=True)
+
 def main() -> None:
     st.set_page_config(
         page_title="PLAIX Intelligence Platform",
@@ -187,56 +266,65 @@ def main() -> None:
         layout="wide",
     )
     st.markdown(styles.CUSTOM_CSS, unsafe_allow_html=True)
-
-    st.title("🏏 PLAIX Intelligence Platform")
-    st.markdown(
-        """
-        **Advanced Anomaly Detection & Narrative Intelligence**
-        
-        Analyze player performance with depth:
-        - **UPS Score**: Quantify statistical deviation from baselines.
-        - **Contextual Intelligence**: Adjust for venue, opposition, and match situation.
-        - **Narrative Engine**: Automated, human-readable insights.
-        """
-    )
-
+    
+    
+    # Render Top Bar & Ticker
+    render_top_bar()
+    
     df_events = load_events_dataset()
+    render_ticker(df_events)
+    
+    # Render Dashboard Stats (Global)
+    render_dashboard_stats(df_events)
 
+    # Sidebar Navigation
     with st.sidebar:
-        st.header("Simulation Parameters")
-        with st.form("prediction_form"):
-            st.caption("Configure innings context")
-            player_id = player_selector("Player", df_events, default="P1")
-            match_format = st.selectbox("Format", ["T20", "ODI", "TEST"], index=0)
-            batting_position = st.number_input("Batting position", min_value=1, max_value=11, value=4)
-            
-            st.divider()
-            st.caption("Performance Data")
-            current_runs = st.number_input("Current runs", value=40.0, step=1.0)
-            baseline_mean_runs = st.number_input("Baseline mean runs", value=22.0, step=1.0)
-            baseline_std_runs = st.number_input("Baseline std runs", value=8.0, step=1.0)
-            
-            st.divider()
-            st.caption("Context")
-            venue_flatness = st.slider("Venue flatness", 0.0, 1.0, 0.6)
-            opposition_strength = st.slider("Opposition strength", 0.0, 1.0, 0.5)
-            tone = st.selectbox(
-                "Narrative Tone",
-                options=["analyst", "commentator", "casual"],
-                index=0,
-            )
-            
-            submitted = st.form_submit_button("Run Analysis", type="primary")
+        st.header("Navigation")
+        page = st.radio("Go to", [
+            "Single Innings", 
+            "Recent Trend", 
+            "Top Anomalies", 
+            "Anomaly Feed", 
+            "Live Scenario",
+            "About Platform"
+        ], label_visibility="collapsed")
+        st.divider()
 
-    tab1, tab2, tab3, tab4, tab5 = st.tabs(
-        ["Single Innings", "Recent Trend", "Top Anomalies", "Anomaly Feed", "Live Scenario"]
-    )
 
-    with tab1:
+
+    # Main Content Area
+    if page == "Single Innings":
         st.subheader("Anomaly Analysis")
-        right_col = st.container()
-        if not submitted:
-            st.info("👈 Configure parameters in the sidebar to run a simulation.")
+        input_col, output_col = st.columns([1, 2], gap="large")
+        
+        with input_col:
+            st.markdown("### Simulation Parameters")
+            with st.form("prediction_form"):
+                with st.expander("Game Context", expanded=True):
+                    player_id = player_selector("Player", df_events, default="P1")
+                    match_format = st.selectbox("Format", ["T20", "ODI", "TEST"], index=0)
+                    batting_position = st.number_input("Batting position", min_value=1, max_value=11, value=4)
+
+                with st.expander("Performance Data", expanded=True):
+                    current_runs = st.number_input("Current runs", value=40.0, step=1.0)
+                    baseline_mean_runs = st.number_input("Baseline mean runs", value=22.0, step=1.0)
+                    baseline_std_runs = st.number_input("Baseline std runs", value=8.0, step=1.0)
+                
+                with st.expander("Match Conditions", expanded=False):
+                    venue_flatness = st.slider("Venue flatness", 0.0, 1.0, 0.6)
+                    opposition_strength = st.slider("Opposition strength", 0.0, 1.0, 0.5)
+                    tone = st.selectbox(
+                        "Narrative Tone",
+                        options=["analyst", "commentator", "casual"],
+                        index=0,
+                    )
+                
+                submitted = st.form_submit_button("Run Analysis", type="primary")
+
+        with output_col:
+            right_col = st.container()
+            if not submitted:
+                st.info("Configure parameters to run simulation.")
 
         if submitted:
             payload = {
@@ -353,7 +441,7 @@ def main() -> None:
                     st.error(f"Request failed: {exc}")
                     st.info("Check PLAIX_API_URL or backend availability.")
 
-    with tab2:
+    if page == "Recent Trend":
         st.subheader("Recent Innings Trend")
         c1, c2, c3 = st.columns(3)
         trend_player_id = player_selector("Player (trend view)", df_events, default="P_DEMO")
@@ -409,7 +497,7 @@ def main() -> None:
                 st.error(f"Trend request failed: {exc}")
                 st.info("Ensure backend is running and player ID exists.")
 
-    with tab3:
+    if page == "Top Anomalies":
         st.subheader("Top Anomalies")
         if df_events.empty or "ups_score" not in df_events.columns:
             st.info("No local dataset with UPS scores found. Load or generate data to view the leaderboard.")
@@ -463,9 +551,34 @@ def main() -> None:
                     display_df["model_anomaly_probability"] = (
                         display_df["model_anomaly_probability"].fillna(0).apply(lambda x: f"{x:.1%}")
                     )
-                st.dataframe(display_df, use_container_width=True)
+                st.dataframe(
+                    display_df,
+                    use_container_width=True,
+                    column_config={
+                        "rank": st.column_config.NumberColumn("Rank", width="small"),
+                        "player_id": st.column_config.TextColumn("Player"),
+                        "match_format": st.column_config.TextColumn("Format", width="small"),
+                        "date": st.column_config.DateColumn("Date", format="YYYY-MM-DD"),
+                        "current_runs": st.column_config.NumberColumn("Runs"),
+                        "ups_score": st.column_config.ProgressColumn(
+                            "UPS Score",
+                            min_value=0,
+                            max_value=5,
+                            format="%.2f",
+                        ),
+                        "model_anomaly_probability": st.column_config.ProgressColumn(
+                            "Model Prob",
+                            min_value=0,
+                            max_value=1,
+                            format="%.1f%%",
+                        ),
+                        "combined_score": st.column_config.NumberColumn("Score", format="%.2f"),
+                    },
+                    hide_index=True,
+                )
 
-                # Featured Anomaly Story
+                # Featured Anomaly Story Container
+                st.markdown('<div class="featured-card">', unsafe_allow_html=True)
                 featured_row = df_top.iloc[0].to_dict()
                 st.subheader("Featured Anomaly Story")
                 st.caption("Auto-generated in commentator tone from the most extreme anomaly in the current view.")
@@ -557,10 +670,14 @@ def main() -> None:
                     context_bits.append(f"Batting position {int(batting_pos)} influences scoring opportunity.")
                 if not context_bits:
                     context_bits.append("Context: baseline vs current runs is the primary signal.")
-                st.markdown(f"- {driver_spike}")
-                st.markdown(f"- {driver_volatility}")
-                for bit in context_bits:
-                    st.markdown(f"- {bit}")
+                st.markdown(f"**Drivers:** <span class='driver-tag'>{driver_spike}</span> <span class='driver-tag'>{driver_volatility}</span>", unsafe_allow_html=True)
+                
+                if context_bits:
+                    st.caption("Contextual factors:")
+                    for bit in context_bits:
+                        st.markdown(f"- {bit}")
+                
+                st.markdown('</div>', unsafe_allow_html=True)
 
                 c1, c2, c3, c4 = st.columns(4)
                 c1.metric("Player", narrate_payload["player_id"])
@@ -629,7 +746,7 @@ Key stats:
                 )
                 st.caption("Tip: Use this player in the Single Innings tab to analyze.")
 
-    with tab4:
+    if page == "Anomaly Feed":
         st.subheader("Anomaly Feed")
         filters_col, feed_col = st.columns([1, 2])
         if "selected_event_id" not in st.session_state:
@@ -749,7 +866,7 @@ Key stats:
                 if st.button("Clear selection"):
                     st.session_state["selected_event_id"] = None
 
-    with tab5:
+    if page == "Live Scenario":
         st.subheader("Live Scenario Simulator")
         controls_col, live_col = st.columns([1, 2])
 
@@ -768,6 +885,7 @@ Key stats:
             live_overs = st.slider("Overs", min_value=10, max_value=20, value=20, step=1)
             live_tone = st.selectbox("Narrative Tone", options=["analyst", "commentator", "casual"], index=1)
             live_include_narrative = st.checkbox("Include narrative", value=True)
+
             if st.button("Start Session"):
                 try:
                     start_resp = call_live_start(
@@ -868,6 +986,30 @@ Key stats:
                         time.sleep(step_speed)
                         st.session_state["live_index"] += 1
                         st.experimental_rerun()
+
+
+
+    if page == "About Platform":
+        st.header("About PLAIX")
+        st.markdown("""
+        **PLAIX** (Player Anomaly Intelligence X) is an advanced analytics platform designed to detect, quantify, and explain anomalies in sports performance.
+        
+        ### Core Technologies
+        
+        #### 1. UPS (Unexpected Performance Spike)
+        The **UPS Score** is our proprietary metric for quantifying deviation. Unlike simple Z-scores, UPS accounts for:
+        - **Volatility adjustment**: High-variance players have a higher threshold for anomalies.
+        - **Contextual weighting**: Runs scored on difficult pitches or against top opposition count more.
+        
+        #### 2. Narrative Engine
+        Raw numbers don't tell the whole story. Our **LLM-driven Narrative Engine** translates complex statistical spikes into human-readable insights, adopting different personas (Analyst, Commentator, Casual Fan).
+        
+        #### 3. Architecture
+        Built on a robust, multi-sport architecture:
+        - **Backend**: Python (FastAPI) for high-performance scoring.
+        - **ML Layer**: Scikit-learn for anomaly probability modeling.
+        - **Frontend**: Streamlit for rapid, interactive visualization.
+        """)
 
 
 if __name__ == "__main__":
