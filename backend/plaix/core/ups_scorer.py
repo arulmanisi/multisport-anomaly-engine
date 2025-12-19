@@ -64,12 +64,24 @@ class UPSScorer:
         self.sigma_min = sigma_min
 
     def get_team_role_baseline(self, player_id: str, match_format: str) -> Optional[BaselineStats]:
-        """TODO: Fetch team-role baseline when player history is insufficient."""
-        return None
+        """
+        Fetch team-role baseline when player history is insufficient (MVP fallback).
+
+        Notes:
+            - Placeholder implementation returns a simple heuristic baseline.
+            - Replace with real team/role aggregates when data is available.
+        """
+        return BaselineStats(mean_runs=25.0, std_runs=max(self.sigma_min, 10.0), num_innings=0, source="team_role_fallback")
 
     def get_global_role_baseline(self, match_format: str) -> Optional[BaselineStats]:
-        """TODO: Fetch global-role baseline when player/team baselines are unavailable."""
-        return None
+        """
+        Fetch global-role baseline when player/team baselines are unavailable (MVP fallback).
+
+        Notes:
+            - Placeholder implementation uses conservative global defaults.
+            - Replace with format-specific aggregates when available.
+        """
+        return BaselineStats(mean_runs=22.0, std_runs=max(self.sigma_min, 12.0), num_innings=0, source="global_fallback")
 
     def _compute_weighted_stats(self, values: Iterable[float]) -> tuple[float, float, int]:
         """Compute exponential-weighted mean and std for a sequence of values."""

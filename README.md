@@ -43,25 +43,19 @@ pip install -r requirements.txt
 ```
 
 ### Run the API
+Use the consolidated PLAIX entrypoint:
 ```bash
-uvicorn cae.api.app:app --reload
-
-# PLAIX MVP app
-uvicorn plaix.api.main:app --reload
+cd backend
+uvicorn app.main:app --reload --port 8000
 ```
 - Health: `GET http://localhost:8000/health`
-- Cricket-only (legacy): `POST http://localhost:8000/score`
 - Multi-sport: `POST http://localhost:8000/plaix/score`
-- Recent scores: `GET http://localhost:8000/recent`
-- UI: open `http://localhost:8000/ui/` for a simple end-to-end prototype.
+- Inference: `POST http://localhost:8000/predict/single` and `/predict/batch`
+- Feed/Live/Report: `/feed/*`, `/live/*`, `/report/anomaly/pdf`
 
 ### Sample payloads
 - Request example: `samples/score_request.json`
 - Response example: `samples/score_response.json`
-
-### Persistence
-- Anomaly results are stored in a local SQLite database at `data/cae.db` (created on first run).
-- `GET /recent` returns the latest scored events; the UI has a “Load recent” button wired to it.
 
 ## PLAIX Day 2 workflow
 - Load events CSV: `plaix.data.loader.load_events_csv`
@@ -121,6 +115,21 @@ Set the API URL (defaults to http://localhost:8000/predict/single) and launch:
 PLAIX_API_URL=http://localhost:8000/predict/single streamlit run ui/demo_streamlit/demo_ui.py
 ```
 The UI will call the Plaix.ai backend and display UPS score, bucket, baseline flag, and model outputs.
+
+## Working with real data (Cricsheet)
+- Download JSON ZIPs from the Cricsheet downloads page for the formats you need (T20/ODI/Test).
+- Unzip into `data/raw/cricsheet/<format>/` (e.g., `data/raw/cricsheet/t20/`).
+- Optional: download the Cricsheet Register CSV for consistent player IDs.
+- See `docs/REAL_DATA.md` for structure and notes.
+
+## Smoke test (backend)
+- Install deps (`pip install -r requirements.txt`, activate venv if used).
+- Run `make smoke-test`.
+- Optional: override backend app path: `BACKEND_APP=app.main:app make smoke-test`.
+
+## Benchmark (synthetic)
+- Ensure dependencies installed (`pip install -r requirements.txt`).
+- Run `make benchmark` to train logistic regression on the synthetic UPS dataset and report accuracy/precision/recall/roc_auc. The script generates the dataset if missing, saves the model to `backend/models/ups_logreg.pkl`, and metrics to `backend/data/benchmark_metrics.json`.
 
 ## Architecture Overview
 ```mermaid
@@ -274,7 +283,7 @@ Example response:
 ```
 
 ## Project layout
-- `src/cae/` — library code
+- (Legacy `src/cae/` removed) — use `backend/plaix` for current code
   - `api/app.py` — FastAPI app factory and routes
   - `data/schemas.py` — Pydantic models for requests/responses
   - `data/baseline.py` — simple per-phase baseline calculators

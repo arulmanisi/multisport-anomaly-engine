@@ -7,3 +7,6 @@ BACKEND_ROOT = Path(__file__).resolve().parents[1]
 SRC_PATH = BACKEND_ROOT / "src"
 if str(SRC_PATH) not in sys.path:
     sys.path.insert(0, str(SRC_PATH))
+# Also add backend root so app modules (e.g., backend/app/main.py) can be imported in tests.
+if str(BACKEND_ROOT) not in sys.path:
+    sys.path.insert(0, str(BACKEND_ROOT))

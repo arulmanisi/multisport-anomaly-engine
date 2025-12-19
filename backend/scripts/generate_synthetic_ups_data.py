@@ -9,7 +9,8 @@ import numpy as np
 import pandas as pd
 
 OUTPUT_PATH = Path(__file__).resolve().parents[1] / "data" / "synthetic_ups_dataset.csv"
-N_ROWS = 200
+# Increased sample size for richer benchmarks/training
+N_ROWS = 1000
 
 
 def sample_baseline() -> tuple[float, float]:

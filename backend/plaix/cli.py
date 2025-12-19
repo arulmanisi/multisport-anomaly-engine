@@ -102,7 +102,7 @@ def run_predict_single(args: argparse.Namespace) -> None:
     )
     narration = {"narrative_title": None, "narrative_summary": None}
     try:
-        narration = narrator.generate_description(event)
+        narration = narrator.generate_description(event, tone="analyst")  # TODO: expose tone via CLI flag
     except Exception:
         narration = {"narrative_title": None, "narrative_summary": None}
 
